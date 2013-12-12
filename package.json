@@ -1,0 +1,23 @@
+{
+  "name": "lz4.js",
+  "version": "0.1.0",
+  "description": "A JavaScript binding of LZ4 for the browser.",
+  "main": "lz4.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "lz4"
+  ],
+  "author": "ukyo",
+  "license": "MIT",
+  "devDependencies": {
+    "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt": "~0.4.2",
+    "grunt-exec": "~0.4.2",
+    "grunt-cafe-mocha": "~0.1.10",
+    "chai": "~1.8.1",
+    "grunt-contrib-clean": "~0.5.0"
+  }
+}
