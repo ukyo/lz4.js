@@ -1,7 +1,6 @@
 var LZ4_compressBound = function (isize) { return isize + (isize / 255 | 0) + 16 };
 var LZ4_DEFAULT_BLOCKSIZE = 1024 * 1024;
 var LZ4_MAGIC_NUMBER = 0x184d2204;
-var LZ4_XXH32 = Module._XXH32;
 var LZ4_BLOCK_MAXIMUM_SIZE_TABLE = [
   null,
   null,
@@ -173,11 +172,10 @@ var lz4 = {};
 lz4['compress'] = compress;
 lz4['decompress'] = decompress;
 lz4['Module'] = Module;
+Module['_LZ4_compressBound'] = LZ4_compressBound;
 
 if (typeof define === 'function' && define['amd']) {
-  define('lz4', function () {
-    return lz4;
-  });
+  define('lz4', function () { return lz4 });
 } else if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
   (function () { return this })()['lz4'] = lz4;
 } else if (ENVIRONMENT_IS_NODE) {

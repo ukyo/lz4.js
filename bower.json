@@ -8,13 +8,16 @@
   "main": "dist/lz4.js",
   "keywords": [
     "lz4",
-    "compression"
+    "compression",
+    "emscripten",
+    "asm.js"
   ],
   "license": "MIT",
   "homepage": "github.com/ukyo/lz4.js",
   "ignore": [
     "dev",
     "node_modules",
-    "test"
+    "test",
+    "example"
   ]
 }
