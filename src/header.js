@@ -1,1 +1,1 @@
-;(function(){
+var lz4={};(function(){

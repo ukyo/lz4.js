@@ -11,7 +11,7 @@ module.exports = (grunt) ->
 
     concat:
       dev:
-        src: ['src/pre.js', 'dev/_lz4.js', 'src/post.js']
+        src: ['src/header.js', 'src/pre.js', 'dev/_lz4.js', 'src/post.js', 'src/footer.js']
         dest: 'dev/lz4.js'
       release:
         options:

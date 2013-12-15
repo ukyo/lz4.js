@@ -168,18 +168,13 @@ function decompress (source) {
   return ret;
 }
 
-var lz4 = {};
+var lz4 = this;
 lz4['compress'] = compress;
 lz4['decompress'] = decompress;
-lz4['Module'] = Module;
 Module['_LZ4_compressBound'] = LZ4_compressBound;
 
 if (typeof define === 'function' && define['amd']) {
   define('lz4', function () { return lz4 });
-} else if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
-  (function () { return this })()['lz4'] = lz4;
 } else if (ENVIRONMENT_IS_NODE) {
   module['exports'] = lz4;
-} else {
-  throw new Error('lz4: error');
 }
