@@ -28,3 +28,55 @@ html
 
 * source `Uint8Array`
 * return `Uint8Array`
+
+## Development
+
+### Require
+
+* emscripten
+* llvm 3.2
+* subversion
+* nodejs
+
+### Init
+
+Get repos.
+
+```
+git clone git@github.com:ukyo/lz4.js.git
+```
+
+If you don't install the grunt-cli run below.
+
+```
+npm install -g grunt-cli
+```
+
+Install dev dependencies
+
+```
+cd path/to/lz4.js
+npm install
+```
+
+Download original LZ4 repos and compile for development.
+
+```
+grunt init
+```
+
+### Write codes
+
+Watch codes update and test.
+
+```
+grunt watch
+```
+
+### Release
+
+Release build.
+
+```
+grunt release
+```
