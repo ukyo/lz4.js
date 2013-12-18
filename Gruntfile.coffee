@@ -40,16 +40,23 @@ module.exports = (grunt) ->
         files: ['src/pre.js', 'src/post.js', 'Gruntfile.coffee']
         tasks: ['concat:dev', 'test:dev']
 
+    mkdir:
+      dev:
+        options:
+          create: ['dev']
+
   grunt.loadNpmTasks 'grunt-exec'
   grunt.loadNpmTasks 'grunt-contrib-concat'
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-cafe-mocha'
   grunt.loadNpmTasks 'grunt-contrib-clean'
+  grunt.loadNpmTasks 'grunt-mkdir'
 
   grunt.registerTask 'compile:dev', ['exec:compileDev']
   grunt.registerTask 'compile:release', ['exec:compileRelease']
   grunt.registerTask 'init', [
     'exec:initLZ4'
+    'mkdir:dev'
     'compile:dev'
   ]
   grunt.registerTask 'test:release', [

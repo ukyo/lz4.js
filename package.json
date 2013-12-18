@@ -18,6 +18,7 @@
     "grunt-exec": "~0.4.2",
     "grunt-cafe-mocha": "~0.1.10",
     "chai": "~1.8.1",
-    "grunt-contrib-clean": "~0.5.0"
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-mkdir": "~0.1.1"
   }
 }
