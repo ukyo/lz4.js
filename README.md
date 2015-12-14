@@ -4,7 +4,7 @@ LZ4 for browser
 
 ## Install and Use
 
-console
+### bower
 
 ```
 bower install lz4
@@ -16,7 +16,13 @@ html
 <script src="bower_components/lz4/lz4.js"></script>
 ```
 
-## High Level API
+### npm
+
+```
+npm install lz4-asm
+```
+
+## API
 
 ### lz4.compress(source, compressLevel)
 
