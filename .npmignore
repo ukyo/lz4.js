@@ -1,0 +1,8 @@
+.gitignore
+dev/
+example/
+lz4/
+node_modules/
+test/
+bower.json
+Gruntfile.coffee

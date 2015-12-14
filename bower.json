@@ -1,11 +1,11 @@
 {
   "name": "lz4.js",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "authors": [
     "ukyo <ukyo.web@gmail.com>"
   ],
   "description": "lz4 for browser",
-  "main": "dist/lz4.js",
+  "main": "lz4.js",
   "keywords": [
     "lz4",
     "compression",

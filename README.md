@@ -18,10 +18,10 @@ html
 
 ## High Level API
 
-### lz4.compress(source, blockSize)
+### lz4.compress(source, compressLevel)
 
 * source `Uint8Array`
-* blockSize `number`
+* compressLevel `number` (`0-16`)
 * return `Uint8Array`
 
 ### lz4.decompress(source)
@@ -33,10 +33,8 @@ html
 
 ### Require
 
-* emscripten
-* llvm 3.2
-* subversion
-* nodejs
+* latest emscripten
+* nodejs v5.0~
 
 ### Init
 
