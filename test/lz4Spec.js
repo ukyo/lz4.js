@@ -40,4 +40,24 @@ describe('lz4', function () {
       expect(sameAll(s, source)).to.be.true;
     });
   });
+
+  describe('lz4.createCompressStream', function() {
+    it('should bd defined', function(done) {
+      expect(lz4.createCompressStream).to.be.a('function');
+      var rs = fs.createReadStream('test/source.txt');
+      // var rs = fs.createReadStream('test/compressed.lz4');
+      var cs = lz4.createCompressStream();
+      var ds = lz4.createDecompressStream();
+      var ws = fs.createWriteStream('test/_dst.txt');
+      // var ws = process.stdout;
+      rs.pipe(cs).pipe(ds).pipe(ws);
+      ws.on('close', function () { done(); })
+    });
+  });
+
+  describe('lz4.createDecompressStream', function() {
+    it('should bd defined', function() {
+      expect(lz4.createDecompressStream).to.be.a('function');
+    });
+  })
 });

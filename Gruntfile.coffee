@@ -6,17 +6,18 @@ EXPORTED_FUNCTIONS = '-s EXPORTED_FUNCTIONS="[' + [
 .join() + ']"'
 
 C_FILES = [
-  'src/lz4js.c'
-  'lz4/lib/lz4.c'
-  'lz4/lib/xxhash.c'
-  'lz4/lib/lz4frame.c'
-  'lz4/lib/lz4hc.c'
-  'lz4/lib/xxhash.c'
+  'src/lz4js.cc'
 ].join(' ')
 
-INCLUDES = '-Ilz4/lib'
+LIBS = [
+  'lz4/lib/liblz4.a'
+].join(' ')
+
+INCLUDES = '-Ilz4/lib -Isrc'
 
 POST_JS = '--post-js src/post.js'
+
+TOTAL_MEMORY = 64 * 1024 * 1024;
 
 RELEASE_ARGS = [
   '-O3'
@@ -25,6 +26,8 @@ RELEASE_ARGS = [
   '--llvm-lto 1'
   '-s NO_FILESYSTEM=1'
   '-s NO_BROWSER=1'
+  # '-s DEMANGLE_SUPPORT=1'
+  "-s TOTAL_MEMORY=#{TOTAL_MEMORY}"
 ].join(' ')
 
 module.exports = (grunt) ->
@@ -32,9 +35,9 @@ module.exports = (grunt) ->
     pkg: grunt.file.readJSON 'package.json'
     exec:
       compileDev:
-        cmd: "emcc #{INCLUDES} #{C_FILES} -o dev/_lz4.js #{EXPORTED_FUNCTIONS}"
+        cmd: "emcc --bind #{INCLUDES} #{C_FILES} #{LIBS} -o dev/_lz4.js -s DEMANGLE_SUPPORT=1 -s TOTAL_MEMORY=#{TOTAL_MEMORY}"
       compileRelease:
-        cmd: "emcc #{RELEASE_ARGS} #{INCLUDES} #{C_FILES} -o _lz4.js #{POST_JS} #{EXPORTED_FUNCTIONS}"
+        cmd: "emcc --bind #{RELEASE_ARGS} #{INCLUDES} #{C_FILES} #{LIBS} -o _lz4.js #{POST_JS}"
 
     concat:
       dev:
