@@ -41,23 +41,38 @@ describe('lz4', function () {
     });
   });
 
-  describe('lz4.createCompressStream', function() {
-    it('should bd defined', function(done) {
-      expect(lz4.createCompressStream).to.be.a('function');
-      var rs = fs.createReadStream('test/source.txt');
-      // var rs = fs.createReadStream('test/compressed.lz4');
-      var cs = lz4.createCompressStream();
-      var ds = lz4.createDecompressStream();
-      var ws = fs.createWriteStream('test/_dst.txt');
-      // var ws = process.stdout;
-      rs.pipe(cs).pipe(ds).pipe(ws);
-      ws.on('close', function () { done(); })
-    });
-  });
-
   describe('lz4.createDecompressStream', function() {
     it('should bd defined', function() {
       expect(lz4.createDecompressStream).to.be.a('function');
     });
-  })
+
+    it('should return the source file from the compressed file', function (done) {
+      var rs = fs.createReadStream('test/compressed.lz4');
+      var ds = lz4.createDecompressStream();
+      var ws = fs.createWriteStream('test/_dst1.txt');
+      rs.pipe(ds).pipe(ws);
+      ws.on('close', function () {
+        expect(fs.readFileSync('test/source.txt').equals(fs.readFileSync('test/_dst1.txt'))).to.be.true;
+        done();
+      });
+    });
+  });
+
+  describe('lz4.createCompressStream', function() {
+    it('should bd defined', function() {
+      expect(lz4.createCompressStream).to.be.a('function');
+    });
+
+    it('should return the valid lz4 file', function (done) {
+      var rs = fs.createReadStream('test/source.txt');
+      var cs = lz4.createCompressStream();
+      var ds = lz4.createDecompressStream();
+      var ws = fs.createWriteStream('test/_dst2.txt');
+      rs.pipe(cs).pipe(ds).pipe(ws);
+      ws.on('close', function () {
+        expect(fs.readFileSync('test/source.txt').equals(fs.readFileSync('test/_dst2.txt'))).to.be.true;
+        done();
+      });
+    });
+  });
 });

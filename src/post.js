@@ -5,8 +5,18 @@ if (typeof define === 'function' && define['amd']) {
   module['exports'] = lz4;
 }
 
+_LZ4JS_init();
 
 var LZ4JS_instances = {};
+var BUF_SIZE = 8192;
+var defaultCompressOptions = {
+  bufferSize: 8 * 1024,
+  compressionLevel: 0
+};
+var defaultDecompressOptions = {
+  bufferSize: 8 * 1024
+};
+
 
 function LZ4JS_assign(source) {
   Array.prototype.slice.call(arguments, 1).forEach(function(o) {
@@ -18,17 +28,33 @@ function LZ4JS_assign(source) {
   return source;
 }
 
-var Compressor = Module['Compressor'];
-var Decompressor = Module['Decompressor'];
+function LZ4JS_read(id, srcPtr, size) {
+  return LZ4JS_instances[id].$read(srcPtr, size);
+}
 
-var defaultCompressOptions = {
-  bufferSize: 8 * 1024,
-  compressionLevel: 0
-};
+function LZ4JS_write(id, dstPtr, size) {
+  return LZ4JS_instances[id].$write(dstPtr, size);
+}
 
-var defaultDecompressOptions = {
-  bufferSize: 8 * 1024
-};
+function LZ4JS_error(id, ptr) {
+  LZ4JS_instances[id].$error = new Error(UTF8ToString(ptr));
+}
+
+function LZ4JS_concat(buffers) {
+  var n, ret, offset = 0;
+  n = buffers.map(function(buffer) {
+    return buffer.length;
+  }).reduce(function(a, b) {
+    return a + b;
+  }, 0);
+  ret = new Uint8Array(n);
+  buffers.forEach(function(buffer) {
+    ret.set(buffer, offset);
+    offset += buffer.length;
+  });
+  return ret;
+}
+
 
 ENVIRONMENT_IS_NODE && (function() {
   var Transform = require('stream').Transform;
@@ -37,32 +63,37 @@ ENVIRONMENT_IS_NODE && (function() {
   inherits(CompressStream, Transform);
   function CompressStream(options) {
     this.options = LZ4JS_assign({}, defaultCompressOptions, options);
-    Transform.call(this, options);
-    this.id = LZ4JS_getId();
-    this.compressor = new Compressor(this.id, this.options.compressionLevel);
+    this.cctxPtr = _LZ4JS_createCompressionContext(this.options.compressionLevel);
+    if (!this.cctxPtr) throw new Error('LZ4JS_createCompressionContext');
+    Transform.call(this, this.options);
     this.initialized = false;
     this.srcSize = 0;
     this.dstSize = 0;
     this.srcBuf = new Buffer(0);
     this.dstBuf = new Buffer(0);
-    var that = this;
-    LZ4JS_instances[this.id] = {
-      read: function(srcPtr, size) {
-        HEAPU8.set(new Uint8Array(that.srcBuf.buffer, that.srcBuf.byteOffset, that.srcSize), srcPtr);
-        return that.srcSize;
-      },
-      write: function (dstPtr, size) {
-        that.dstBuf = new Buffer(HEAPU8.buffer).slice(dstPtr, dstPtr + size);
-        that.push(new Buffer(that.dstBuf));
-      }
-    };
+    LZ4JS_instances[this.cctxPtr] = this;
   }
 
+  CompressStream.prototype.$read = function(srcPtr, size) {
+    HEAPU8.set(new Uint8Array(this.srcBuf.buffer, this.srcBuf.byteOffset, this.srcSize), srcPtr);
+    return this.srcSize;
+  };
+
+  CompressStream.prototype.$write = function(dstPtr, size) {
+    this.dstBuf = new Buffer(HEAPU8.buffer).slice(dstPtr, dstPtr + size);
+    this.push(new Buffer(this.dstBuf));
+  }
+
+  CompressStream.prototype.cleanup = function() {
+    _LZ4JS_freeCompressionContext(this.cctxPtr);
+    delete LZ4JS_instances[this.cctxPtr];
+    if (this.$error) throw this.$error;
+  };
+
   CompressStream.prototype._transform = function(chunk, encoding, callback) {
-    console.log(chunk, chunk.length);
     try {
       if (!this.initialized) {
-        this.compressor.begin();
+        if (!_LZ4JS_compressBegin(this.cctxPtr)) this.cleanup();
         this.initialized = true;
       }
       var offset;
@@ -70,28 +101,21 @@ ENVIRONMENT_IS_NODE && (function() {
       for (offset = 0; offset < chunk.length; offset += this.options.bufferSize) {
         this.srcSize = Math.min(chunk.length - offset, this.options.bufferSize);
         this.srcBuf = chunk.slice(offset, offset + this.srcSize);
-        this.compressor.write();
+        if (!_LZ4JS_compressUpdate(this.cctxPtr)) this.cleanup();
       }
       callback();
-    } catch (e) {
-      var error = LZ4JS_instances[this.id].error || e;
-      console.log(error.stack);
-      delete LZ4JS_instances[this.id];
-      this.compressor.delete();
+    } catch (error) {
       callback(error);
     }
   };
 
   CompressStream.prototype._flush = function(callback) {
     try {
-      this.compressor.end();
+      _LZ4JS_compressEnd(this.cctxPtr);
+      this.cleanup();
       callback();
-    } catch (e) {
-      var error = LZ4JS_instances[this.id].error || e;
+    } catch (error) {
       callback(error);
-    } finally {
-      delete LZ4JS_instances[this.id];
-      this.compressor.delete();
     }
   };
 
@@ -100,54 +124,53 @@ ENVIRONMENT_IS_NODE && (function() {
     return new CompressStream(options);
   }
 
-  var count = 0;
   inherits(DecompressStream, Transform);
   function DecompressStream(options) {
     this.options = LZ4JS_assign({}, defaultDecompressOptions, options);
-    Transform.call(this, options);
-    this.id = LZ4JS_getId();
-    this.decompressor = new Decompressor(this.id);
+    this.dctxPtr = _LZ4JS_createDecompressionContext();
+    if (!this.dctxPtr) throw new Error('LZ4JS_createDecompressionContext');
+    Transform.call(this, this.options);
     this.srcSize = 0;
     this.dstSize = 0;
     this.srcBuf = new Buffer(0);
     this.dstBuf = new Buffer(0);
-    var that = this;
-    LZ4JS_instances[this.id] = {
-      read: function(srcPtr, size) {
-        HEAPU8.set(new Uint8Array(that.srcBuf.buffer, that.srcBuf.byteOffset, that.srcSize), srcPtr);
-        return that.srcSize;
-      },
-      write: function (dstPtr, size) {
-        that.dstBuf = new Buffer(HEAPU8.buffer).slice(dstPtr, dstPtr + size);
-        that.push(new Buffer(that.dstBuf));
-      }
-    };;
+    LZ4JS_instances[this.dctxPtr] = this;
   }
+
+  DecompressStream.prototype.$read = function(srcPtr, size) {
+    HEAPU8.set(new Uint8Array(this.srcBuf.buffer, this.srcBuf.byteOffset, this.srcSize), srcPtr);
+    return this.srcSize;
+  };
+
+  DecompressStream.prototype.$write = function(dstPtr, size) {
+    this.dstBuf = new Buffer(HEAPU8.buffer).slice(dstPtr, dstPtr + size);
+    this.push(new Buffer(this.dstBuf));
+  };
+
+  DecompressStream.prototype.cleanup = function() {
+    _LZ4JS_freeDecompressionContext(this.dctxPtr);
+    delete LZ4JS_instances[this.dctxPtr];
+    if (this.$error) throw this.$error;
+  };
 
   DecompressStream.prototype._transform = function(chunk, encoding, callback) {
     try {
       var offset;
       var bufs = [];
       var totalLength = 0;
-      var that = this;
       for(offset = 0; offset < chunk.length; offset += this.options.bufferSize) {
         this.srcSize = Math.min(chunk.length - offset, this.options.bufferSize);
         this.srcBuf = chunk.slice(offset, offset + this.srcSize);
-        that.decompressor.write();
+        if (!_LZ4JS_decompress(this.dctxPtr)) this.cleanup();
       }
       callback();
-    } catch (e) {
-      var error = LZ4JS_instances[this.id].error || e;
-      console.log(error.stack);
-      delete LZ4JS_instances[this.id];
-      this.decompressor.delete();
+    } catch (error) {
       callback(error);
     }
   };
 
   DecompressStream.prototype._flush = function(callback) {
-    delete LZ4JS_instances[this.id];
-    this.decompressor.delete();
+    this.cleanup();
     callback();
   };
 
@@ -157,103 +180,97 @@ ENVIRONMENT_IS_NODE && (function() {
   }
 })();
 
-function LZ4JS_read(id, srcPtr, size) {
-  return LZ4JS_instances[id].read(srcPtr, size);
+
+function Compressor(src, options) {
+  this.options = LZ4JS_assign({}, defaultCompressOptions, options);
+  this.cctxPtr = _LZ4JS_createCompressionContext(this.options.compressionLevel);
+  if (!this.cctxPtr) throw new Error('LZ4JS_createCompressionContext');
+  this.src = src;
+  this.offset = 0;
+  this.buffers = [];
+  this.srcSize = 0;
+  this.$error = null;
+  LZ4JS_instances[this.cctxPtr] = this;
 }
 
-function LZ4JS_write(id, dstPtr, size) {
-  return LZ4JS_instances[id].write(dstPtr, size);
-}
+Compressor.prototype.$write = function (dstPtr, size) {
+  this.buffers.push(new Uint8Array(HEAPU8.subarray(dstPtr, dstPtr + size)));
+};
 
-function LZ4JS_error(id, ptr) {
-  LZ4JS_instances[id].error = new Error(UTF8ToString(ptr));
-}
+Compressor.prototype.$read = function(srcPtr, size) {
+  HEAPU8.set(this.src.subarray(this.offset, this.offset + this.srcSize), srcPtr);
+  return this.srcSize;
+};
 
-var _LZ4JS_id = 0;
-function LZ4JS_getId() {
-  if (_LZ4JS_id === 0x1FFFFFFFFFFFFF) _LZ4JS_id = 0;
-  return _LZ4JS_id++;
-}
+Compressor.prototype.cleanup = function() {
+  _LZ4JS_freeCompressionContext(this.cctxPtr);
+  delete LZ4JS_instances[this.cctxPtr];
+  if (this.$error) throw this.$error;
+};
 
-function LZ4JS_concat(buffers) {
-  var n, ret, offset = 0;
-  n = buffers.map(function(buffer) {
-    return buffer.length;
-  }).reduce(function(a, b) {
-    return a + b;
-  });
-  ret = new Uint8Array(n);
-  buffers.forEach(function(buffer) {
-    ret.set(buffer, offset);
-    offset += buffer.length;
-  });
-  return ret;
-}
+Compressor.prototype.begin = function() {
+  if (!_LZ4JS_compressBegin(this.cctxPtr)) this.cleanup();
+};
+
+Compressor.prototype.compress = function() {
+  for (; this.offset < this.src.length; this.offset += BUF_SIZE) {
+    this.srcSize = Math.min(this.src.length - this.offset, BUF_SIZE);
+    if (!_LZ4JS_compressUpdate(this.cctxPtr)) this.cleanup();
+  }
+};
+
+Compressor.prototype.end = function() {
+  if (!_LZ4JS_compressEnd(this.cctxPtr)) this.cleanup();
+};
 
 lz4['compress'] = LZ4JS_compress;
 function LZ4JS_compress(src, options) {
-  options = LZ4JS_assign({}, defaultCompressOptions, options);
-  var id = LZ4JS_getId();
-  var compressor = new Compressor(id, options.compressionLevel);
-  var offset;
-  var buffers = [];
-  var srcSize;
-  LZ4JS_instances[id] = {
-    write: function(dstPtr, size) {
-      buffers.push(new Uint8Array(HEAPU8.subarray(dstPtr, dstPtr + size)));
-    },
-    read: function(srcPtr, size) {
-      HEAPU8.set(src.subarray(offset, offset + srcSize), srcPtr);
-      return srcSize;
-    }
-  };
-
-  try {
-    compressor.begin();
-    for (offset = 0; offset < src.length; offset += options.bufferSize) {
-      srcSize = Math.min(src.length - offset, options.bufferSize);
-      compressor.write();
-    }
-    compressor.end();
-    return LZ4JS_concat(buffers);
-  } catch (e) {
-    var error = LZ4JS_instances[id].error || e;
-    throw error;
-  } finally {
-    delete LZ4JS_instances[id];
-    compressor.delete();
-  }
+  var compressor = new Compressor(src, options);
+  compressor.begin();
+  compressor.compress();
+  compressor.end();
+  compressor.cleanup();
+  return LZ4JS_concat(compressor.buffers);
 }
+
+function Decompressor(src, options) {
+  this.options = LZ4JS_assign({}, defaultDecompressOptions, options);
+  this.dctxPtr = _LZ4JS_createDecompressionContext();
+  if (!this.dctxPtr) throw new Error('LZ4JS_createDecompressionContext');
+  this.src = src;
+  this.offset = 0;
+  this.buffers = [];
+  this.srcSize = 0;
+  this.$error = null;
+  LZ4JS_instances[this.dctxPtr] = this;
+}
+
+Decompressor.prototype.$write = function(dstPtr, size) {
+  this.buffers.push(new Uint8Array(HEAPU8.subarray(dstPtr, dstPtr + size)));
+};
+
+Decompressor.prototype.$read = function(srcPtr, size) {
+  HEAPU8.set(this.src.subarray(this.offset, this.offset + this.srcSize), srcPtr);
+  return this.srcSize;
+};
+
+Decompressor.prototype.cleanup = function() {
+  _LZ4JS_freeDecompressionContext(this.dctxPtr);
+  delete LZ4JS_instances[this.dctxPtr];
+  if (this.$error) throw this.$error;
+};
+
+Decompressor.prototype.decompress = function() {
+  for (; this.offset < this.src.length; this.offset += BUF_SIZE) {
+    this.srcSize = Math.min(this.src.length - this.offset, BUF_SIZE);
+    if (!_LZ4JS_decompress(this.dctxPtr)) this.cleanup();
+  }
+};
 
 lz4['decompress'] = LZ4JS_decompress;
 function LZ4JS_decompress(src, options) {
-  options = LZ4JS_assign({}, defaultDecompressOptions, options);
-  var id = LZ4JS_getId();
-  var decompressor = new Decompressor(id);
-  var offset;
-  var buffers = [];
-  var srcSize;
-  LZ4JS_instances[id] = {
-    write: function(dstPtr, size) {
-      buffers.push(new Uint8Array(HEAPU8.subarray(dstPtr, dstPtr + size)));
-    },
-    read: function(srcPtr, size) {
-      HEAPU8.set(src.subarray(offset, offset + srcSize), srcPtr);
-      return srcSize;
-    }
-  };
-
-  try {
-    for (offset = 0; offset < src.length; offset += options.bufferSize) {
-      srcSize = Math.min(src.length - offset, options.bufferSize);
-      decompressor.write();
-    }
-    return LZ4JS_concat(buffers);
-  } catch (e) {
-    var error = LZ4JS_instances[id].error || e;
-    throw error;
-  } finally {
-    delete LZ4JS_instances[id];
-    decompressor.delete();
-  }
+  var decompressor = new Decompressor(src, options);
+  decompressor.decompress();
+  decompressor.cleanup();
+  return LZ4JS_concat(decompressor.buffers);
 }
