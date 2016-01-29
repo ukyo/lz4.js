@@ -12,7 +12,7 @@ typedef struct {
 
 void LZ4JS_init();
 
-LZ4JS_compressionContext_t* LZ4JS_createCompressionContext(unsigned int compressionLevel);
+LZ4JS_compressionContext_t* LZ4JS_createCompressionContext(LZ4F_blockSizeID_t blockSizeID, LZ4F_blockMode_t blockMode, LZ4F_contentChecksum_t contentChecksum, unsigned int compressionLevel);
 LZ4F_decompressionContext_t* LZ4JS_createDecompressionContext();
 void LZ4JS_freeCompressionContext(LZ4JS_compressionContext_t* cctxPtr);
 void LZ4JS_freeDecompressionContext(LZ4F_decompressionContext_t* dctxPtr);

@@ -28,7 +28,7 @@ int LZ4JS_validate(void* ptr, LZ4F_errorCode_t r) {
   return isError ? 0 : 1;
 }
 
-LZ4JS_compressionContext_t* LZ4JS_createCompressionContext(unsigned int compressionLevel) {
+LZ4JS_compressionContext_t* LZ4JS_createCompressionContext(LZ4F_blockSizeID_t blockSizeID, LZ4F_blockMode_t blockMode, LZ4F_contentChecksum_t contentChecksum, unsigned int compressionLevel) {
   LZ4JS_compressionContext_t* cctxPtr;
 
   cctxPtr = malloc(sizeof(LZ4JS_compressionContext_t));
@@ -38,7 +38,7 @@ LZ4JS_compressionContext_t* LZ4JS_createCompressionContext(unsigned int compress
   };
 
   cctxPtr->preferences = (LZ4F_preferences_t){
-    { LZ4F_max256KB, LZ4F_blockLinked, LZ4F_noContentChecksum, LZ4F_frame, 0, { 0, 0 } },
+    { blockSizeID, blockMode, contentChecksum, LZ4F_frame, 0, { 0, 0 } },
     compressionLevel,   /* compression level */
     0,   /* autoflush */
     { 0, 0, 0, 0 },  /* reserved, must be set to 0 */

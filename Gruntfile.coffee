@@ -42,7 +42,7 @@ module.exports = (grunt) ->
     pkg: grunt.file.readJSON 'package.json'
     exec:
       compileDev:
-        cmd: "emcc #{INCLUDES} #{C_FILES} #{LIBS} -o dev/_lz4.js -s TOTAL_MEMORY=#{TOTAL_MEMORY}  #{EXPORTED_FUNCTIONS}"
+        cmd: "emcc #{INCLUDES} #{C_FILES} #{LIBS} -o dev/_lz4.js -s TOTAL_MEMORY=#{TOTAL_MEMORY} #{EXPORTED_FUNCTIONS}"
       compileRelease:
         cmd: "emcc #{RELEASE_ARGS} #{INCLUDES} #{C_FILES} #{LIBS} -o _lz4.js #{POST_JS} -s TOTAL_MEMORY=#{TOTAL_MEMORY}  #{EXPORTED_FUNCTIONS}"
 
