@@ -137,7 +137,7 @@ function LZ4JS_error(id, ptr) {
       this.push(new Buffer(this.dst));
     }
 
-    CompressStream.prototype._transform = function(chunk, encoding, callback) {
+    CompressStream.prototype['_transform'] = function(chunk, encoding, callback) {
       try {
         if (!this.initialized) {
           this.compressBegin();
@@ -156,7 +156,7 @@ function LZ4JS_error(id, ptr) {
       }
     };
 
-    CompressStream.prototype._flush = function(callback) {
+    CompressStream.prototype['_flush'] = function(callback) {
       try {
         this.compressEnd();
         callback();
@@ -190,7 +190,7 @@ function LZ4JS_error(id, ptr) {
       this.push(new Buffer(this.dst));
     };
 
-    DecompressStream.prototype._transform = function(chunk, encoding, callback) {
+    DecompressStream.prototype['_transform'] = function(chunk, encoding, callback) {
       try {
         var offset;
         var bufs = [];
@@ -206,7 +206,7 @@ function LZ4JS_error(id, ptr) {
       }
     };
 
-    DecompressStream.prototype._flush = function(callback) {
+    DecompressStream.prototype['_flush'] = function(callback) {
       this.cleanup();
       callback();
     };
