@@ -22,14 +22,13 @@ function LZ4JS_error(id, ptr) {
   _LZ4JS_init();
 
   var BUF_SIZE = 8192;
-  var BLOCK_SIZE_DEFAULT = lz4['BLOCK_SIZE_DEFAULT'] = 0;
   var BLOCK_SIZE_MAX64KB = lz4['BLOCK_SIZE_MAX64KB'] = 4;
   var BLOCK_SIZE_MAX256KB = lz4['BLOCK_SIZE_MAX256KB'] = 5;
   var BLOCK_SIZE_MAX1MB = lz4['BLOCK_SIZE_MAX1MB'] = 6;
   var BLOCK_SIZE_MAX4MB = lz4['BLOCK_SIZE_MAX4MB'] = 7;
 
   var defaultCompressOptions = {
-    blockMaxSize: BLOCK_SIZE_DEFAULT,
+    blockMaxSize: BLOCK_SIZE_MAX64KB,
     blockIndependent: false,
     contentChecksum: false,
     compressionLevel: 0,
