@@ -241,13 +241,19 @@ function LZ4JS_error(id, ptr) {
     }
   };
 
-  lz4['compress'] = function(src, options) {
+  function compress(src, options) {
     var compressor = new Compressor(src, options);
     compressor.compressBegin();
     compressor.compressBody();
     compressor.compressEnd();
     return concat(compressor.buffers);
-  };
+  }
+
+  function compressForNode(src, options) {
+    var uint8 = compress(src, options);
+    return Buffer.isBuffer(src) ? new Buffer(uint8.buffer, uint8.byteOffset, uint8.byteOffset + uint8.length) : uint8;
+  }
+  lz4['compress'] = ENVIRONMENT_IS_NODE ? compressForNode : compress;
 
   function Decompressor(src, options) {
     BaseDecompressor.call(this);
@@ -275,10 +281,17 @@ function LZ4JS_error(id, ptr) {
     this.cleanup();
   };
 
-  lz4['decompress'] = function(src) {
+  function decompress(src) {
     var decompressor = new Decompressor(src);
     decompressor.decompressAll();
-    return concat(decompressor.buffers);
+    var concated = concat(decompressor.buffers);
+    return src instanceof Uint8Array ? concated : new Buffer(concated.buffer);
   };
+
+  function decompressForNode(src) {
+    var uint8 = decompress(src);
+    return Buffer.isBuffer(src) ? new Buffer(uint8.buffer, uint8.byteOffset, uint8.byteOffset + uint8.length) : uint8;
+  }
+  lz4['decompress'] = ENVIRONMENT_IS_NODE ? decompressForNode : decompress;
 
 }).call(this);

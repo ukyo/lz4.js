@@ -7,8 +7,10 @@ describe('lz4', function () {
     expect(lz4).to.be.an('object');
   });
 
-  var source = new Uint8Array(fs.readFileSync('test/source.txt'));
-  var compressed = new Uint8Array(fs.readFileSync('test/compressed.lz4'));
+  var sourceBuffer = fs.readFileSync('test/source.txt')
+  var source = new Uint8Array(sourceBuffer);
+  var compressedBuffer = fs.readFileSync('test/compressed.lz4')
+  var compressed = new Uint8Array(compressedBuffer);
 
   function sameAll(a, b) {
     return Array.prototype.every.call(a, function (v, i) {
@@ -21,10 +23,16 @@ describe('lz4', function () {
       expect(lz4.decompress).to.be.a('function');
     });
 
-    it('should return the source file from the compressed file', function () {
+    it('should return the source file from the compressed file(Uint8Array)', function () {
       var s = lz4.decompress(compressed);
       expect(s.length).to.equal(source.length);
       expect(sameAll(s, source)).to.be.true;
+    });
+
+    it('should return the source file from the compressed file(Buffer)', function () {
+      var s = lz4.decompress(compressedBuffer);
+      expect(s.length).to.equal(source.length);
+      expect(s.equals(sourceBuffer)).to.be.true;
     });
   });
 
@@ -33,11 +41,18 @@ describe('lz4', function () {
       expect(lz4.compress).to.be.a('function');
     });
 
-    it('should return the valid lz4 file', function () {
+    it('should return the valid lz4 file(Uint8Array)', function () {
       var c = lz4.compress(lz4.decompress(compressed));
       var s = lz4.decompress(c);
       expect(s.length).to.equal(source.length);
       expect(sameAll(s, source)).to.be.true;
+    });
+
+    it('should return the valid lz4 file(Buffer)', function () {
+      var c = lz4.compress(lz4.decompress(compressedBuffer));
+      var s = lz4.decompress(c);
+      expect(s.length).to.equal(source.length);
+      expect(s.equals(sourceBuffer)).to.be.true;
     });
   });
 
