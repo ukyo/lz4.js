@@ -54,6 +54,60 @@ describe('lz4', function () {
       expect(s.length).to.equal(source.length);
       expect(s.equals(sourceBuffer)).to.be.true;
     });
+
+    it('can set block max size option 64KB', function () {
+      var c = lz4.compress(lz4.decompress(compressed), {
+        blockMaxSize: lz4.BLOCK_MAX_SIZE_64KB
+      });
+      var s = lz4.decompress(c);
+      expect(s.length).to.equal(source.length);
+      expect(sameAll(s, source)).to.be.true;
+    });
+
+    it('can set block max size option 256KB', function () {
+      var c = lz4.compress(lz4.decompress(compressed), {
+        blockMaxSize: lz4.BLOCK_MAX_SIZE_256KB
+      });
+      var s = lz4.decompress(c);
+      expect(s.length).to.equal(source.length);
+      expect(sameAll(s, source)).to.be.true;
+    });
+
+    it('can set block max size option 1MB', function () {
+      var c = lz4.compress(lz4.decompress(compressed), {
+        blockMaxSize: lz4.BLOCK_MAX_SIZE_1MB
+      });
+      var s = lz4.decompress(c);
+      expect(s.length).to.equal(source.length);
+      expect(sameAll(s, source)).to.be.true;
+    });
+
+    it('can set block max size option 4MB', function () {
+      var c = lz4.compress(lz4.decompress(compressed), {
+        blockMaxSize: lz4.BLOCK_MAX_SIZE_4MB
+      });
+      var s = lz4.decompress(c);
+      expect(s.length).to.equal(source.length);
+      expect(sameAll(s, source)).to.be.true;
+    });
+
+    it('can set block independence flag', function () {
+      var c = lz4.compress(lz4.decompress(compressed), {
+        blockIndependent: true
+      });
+      var s = lz4.decompress(c);
+      expect(s.length).to.equal(source.length);
+      expect(sameAll(s, source)).to.be.true;
+    });
+
+    it('can set content checksum flag', function () {
+      var c = lz4.compress(lz4.decompress(compressed), {
+        contentChecksum: true
+      });
+      var s = lz4.decompress(c);
+      expect(s.length).to.equal(source.length);
+      expect(sameAll(s, source)).to.be.true;
+    });
   });
 
   describe('lz4.createDecompressStream', function() {
