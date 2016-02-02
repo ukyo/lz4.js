@@ -1,22 +1,30 @@
 EXPORTED_FUNCTIONS = '-s EXPORTED_FUNCTIONS="[' + [
-  '_compress'
-  '_decompress'
+  '_LZ4JS_init'
+  '_LZ4JS_createCompressionContext'
+  '_LZ4JS_createDecompressionContext'
+  '_LZ4JS_freeCompressionContext'
+  '_LZ4JS_freeDecompressionContext'
+  '_LZ4JS_compressBegin'
+  '_LZ4JS_compressUpdate'
+  '_LZ4JS_compressEnd'
+  '_LZ4JS_decompress'
 ]
 .map((name) -> "'#{name}'")
 .join() + ']"'
 
 C_FILES = [
   'src/lz4js.c'
-  'lz4/lib/lz4.c'
-  'lz4/lib/xxhash.c'
-  'lz4/lib/lz4frame.c'
-  'lz4/lib/lz4hc.c'
-  'lz4/lib/xxhash.c'
 ].join(' ')
 
-INCLUDES = '-Ilz4/lib'
+LIBS = [
+  'lz4/lib/liblz4.a'
+].join(' ')
+
+INCLUDES = '-Ilz4/lib -Isrc'
 
 POST_JS = '--post-js src/post.js'
+
+TOTAL_MEMORY = 32 * 1024 * 1024;
 
 RELEASE_ARGS = [
   '-O3'
@@ -25,6 +33,8 @@ RELEASE_ARGS = [
   '--llvm-lto 1'
   '-s NO_FILESYSTEM=1'
   '-s NO_BROWSER=1'
+  # '-s DEMANGLE_SUPPORT=1'
+  "-s TOTAL_MEMORY=#{TOTAL_MEMORY}"
 ].join(' ')
 
 module.exports = (grunt) ->
@@ -32,9 +42,9 @@ module.exports = (grunt) ->
     pkg: grunt.file.readJSON 'package.json'
     exec:
       compileDev:
-        cmd: "emcc #{INCLUDES} #{C_FILES} -o dev/_lz4.js #{EXPORTED_FUNCTIONS}"
+        cmd: "emcc #{INCLUDES} #{C_FILES} #{LIBS} -o dev/_lz4.js -s TOTAL_MEMORY=#{TOTAL_MEMORY} #{EXPORTED_FUNCTIONS}"
       compileRelease:
-        cmd: "emcc #{RELEASE_ARGS} #{INCLUDES} #{C_FILES} -o _lz4.js #{POST_JS} #{EXPORTED_FUNCTIONS}"
+        cmd: "emcc #{RELEASE_ARGS} #{INCLUDES} #{C_FILES} #{LIBS} -o _lz4.js #{POST_JS} -s TOTAL_MEMORY=#{TOTAL_MEMORY}  #{EXPORTED_FUNCTIONS}"
 
     concat:
       dev:
@@ -48,6 +58,7 @@ module.exports = (grunt) ->
 
     clean:
       release: ['_lz4.js']
+      test: ['test/_dst1.txt', 'test/_dst2.txt']
 
     cafemocha:
       testDev:
@@ -79,6 +90,7 @@ module.exports = (grunt) ->
   grunt.registerTask 'test:dev', [
     'concat:dev'
     'cafemocha:testDev'
+    'clean:test'
   ]
   grunt.registerTask 'release', [
     'compile:release'

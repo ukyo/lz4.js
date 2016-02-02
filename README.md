@@ -22,18 +22,57 @@ html
 npm install lz4-asm
 ```
 
+### npm global
+
+```
+npm install lz4-asm -g
+lz4-asm -h
+```
+
 ## API
 
-### lz4.compress(source, compressLevel)
+### static values
 
-* source `Uint8Array`
-* compressLevel `number` (`0-16`)
-* return `Uint8Array`
+* `lz4.BLOCK_MAX_SIZE_64KB`
+* `lz4.BLOCK_MAX_SIZE_256KB`
+* `lz4.BLOCK_MAX_SIZE_1MB`
+* `lz4.BLOCK_MAX_SIZE_4MB`
+
+### lz4.compress(source, options)
+
+compress to a lz4 buffer.
+
+* source `Uint8Array | Buffer`
+* options
+    * compressLevel `number` (range of `0-16`, default is `0`)
+    * blockMaxSize `number` (`lz4.BLOCK_MAX_SIZE_XX`, default is `lz4.BLOCK_MAX_SIZE_4MB`)
+    * blockIndependent `boolean` (default is false)
+    * contentChecksum `boolean` (default is false)
+* return `Uint8Array | Buffer`
 
 ### lz4.decompress(source)
 
-* source `Uint8Array`
-* return `Uint8Array`
+decompress a lz4 buffer.
+
+* source `Uint8Array | Buffer`
+* return `Uint8Array | Buffer`
+
+### lz4.createCompressStream(options)
+
+create a nodejs transform stream.
+
+* source `Uint8Array | Buffer`
+* options
+    * compressLevel `number` (range of `0-16`, default is `0`)
+    * blockMaxSize `number` (`lz4.BLOCK_MAX_SIZE_XX`, default is `lz4.BLOCK_MAX_SIZE_4MB`)
+    * blockIndependent `boolean` (default is false)
+    * contentChecksum `boolean` (default is false)
+* return `Uint8Array | Buffer`
+
+### lz4.createDecompressStream()
+
+create a nodejs transform stream.
+
 
 ## Development
 

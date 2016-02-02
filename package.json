@@ -1,8 +1,8 @@
 {
   "name": "lz4-asm",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A JavaScript binding of LZ4 for the browser.",
-  "main": "lz4.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -20,5 +20,8 @@
     "chai": "~1.8.1",
     "grunt-contrib-clean": "~0.5.0",
     "grunt-mkdir": "~0.1.1"
+  },
+  "dependencies": {
+    "yargs": "^3.32.0"
   }
 }

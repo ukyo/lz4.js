@@ -1,0 +1,65 @@
+#!/usr/bin/env node
+var fs = require('fs');
+var lz4 = require('../index.js');
+
+var argv = require('yargs')
+.usage('Usage: lz4-asm input [options]')
+.example('lz4-asm input -l 9 > output')
+.example('cat foo.txt | lz4-asm | lz4-asm -d')
+
+.alias('l', 'compression-level')
+.describe('l', 'compression level [0-16]')
+.default('l', 0)
+
+.alias('d', 'decompress')
+.describe('d', 'decompress file')
+.boolean('d')
+
+.alias('o', 'output')
+.describe('o', 'output file')
+
+.option('block-max-size', {
+  'describe': 'block maximum size(uncompressed size)',
+  choices: ['64KB', '256KB', '1MB', '4MB'],
+  default: '4MB'
+})
+
+.option('block-independent', {
+  describe: 'block independence flag',
+  default: false
+})
+
+.option('content-checksum', {
+  describe: 'block checksum flag',
+  default: false
+})
+
+.alias('h', 'help')
+.help('h')
+
+.epilog('If you want to show more info, refer to https://github.com/Cyan4973/lz4/blob/master/lz4_Frame_format.md')
+.argv
+
+var inputStream;
+if (argv._.length) {
+  inputStream = fs.createReadStream(argv._[0]);
+} else {
+  process.stdin.resume();
+  inputStream = process.stdin;
+}
+var outputStream = argv.o ? fs.createWriteStream(argv.o) : process.stdout;
+
+var blockMaxSizeTable = {
+  '64KB': lz4.BLOCK_MAX_SIZE_64KB,
+  '256KB': lz4.BLOCK_MAX_SIZE_256KB,
+  '1MB': lz4.BLOCK_MAX_SIZE_1MB,
+  '4MB': lz4.BLOCK_MAX_SIZE_4MB
+};
+var lz4Stream = argv.d ? lz4.createDecompressStream() : lz4.createCompressStream({
+  compressionLevel: argv.l,
+  blockMaxSize: blockMaxSizeTable[argv.blockMaxSize],
+  blockIndependent: argv.blockIndependent,
+  contentChecksum: argv.contentChecksum
+});
+
+inputStream.pipe(lz4Stream).pipe(outputStream);

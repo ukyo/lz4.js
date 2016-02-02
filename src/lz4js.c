@@ -1,124 +1,119 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <emscripten.h>
-#include <lz4frame.h>
+#include "lz4js.h"
 
-#define BUF_SIZE (16*1024)
-#define DECOMPRESS_BUF_SIZE (64*1024)
-#define LZ4_HEADER_SIZE 19
-#define LZ4_FOOTER_SIZE 4
+#define BUF_SIZE 8192
 
+char* src;
+char* dst;
+size_t dstMaxSize = BUF_SIZE;
 
-LZ4F_errorCode_t compress(int compressionlevel) {
-  LZ4F_errorCode_t r;
-  LZ4F_compressionContext_t ctx;
-  LZ4F_preferences_t lz4_preferences = {
-  	{ LZ4F_max256KB, LZ4F_blockLinked, LZ4F_noContentChecksum, LZ4F_frame, 0, { 0, 0 } },
-  	compressionlevel,   /* compression level */
-  	0,   /* autoflush */
-  	{ 0, 0, 0, 0 },  /* reserved, must be set to 0 */
-  };
-  char *src, *buf = NULL;
-  size_t size, n, k, offset = 0, frame_size;
-
-  r = LZ4F_createCompressionContext(&ctx, LZ4F_VERSION);
-  if (LZ4F_isError(r)) {
-    EM_ASM_INT({LZ4JS_setError($0)}, LZ4F_getErrorName(r));
-    return r;
-  }
-  r = 1;
-
-  src = malloc(BUF_SIZE);
-
-  frame_size = LZ4F_compressBound(BUF_SIZE, &lz4_preferences);
-  size =  frame_size + LZ4_HEADER_SIZE + LZ4_FOOTER_SIZE;
-  buf = malloc(size);
-
-  n = offset = LZ4F_compressBegin(ctx, buf, size, &lz4_preferences);
-	if (LZ4F_isError(n)) {
-		r = n;
-		goto cleanup;
-	}
-
-  for (;;) {
-    k = EM_ASM_INT({return LZ4JS_read($0, $1)}, src, BUF_SIZE);
-    if (k == 0) break;
-
-    n = LZ4F_compressUpdate(ctx, buf + offset, size - offset, src, k, NULL);
-    if (LZ4F_isError(n)) {
-      r = n;
-      goto cleanup;
-    }
-
-    offset += n;
-    if (size - offset < frame_size + LZ4_FOOTER_SIZE) {
-      k = EM_ASM_INT({LZ4JS_write($0, $1)}, buf, offset);
-      offset = 0;
-    }
-  }
-
-  n = LZ4F_compressEnd(ctx, buf + offset, size - offset, NULL);
-  if (LZ4F_isError(n)) {
-    r = n;
-    goto cleanup;
-  }
-
-  EM_ASM_INT({LZ4JS_write($0, $1)}, buf, offset + n);
-  r = 0;
-
- cleanup:
-  if (ctx) LZ4F_freeCompressionContext(ctx);
-  if (LZ4F_isError(r)) EM_ASM_INT({LZ4JS_setError($0)}, LZ4F_getErrorName(r));
-  free(src);
-  free(buf);
-  return r;
+void LZ4JS_init() {
+  src = (char*)malloc(BUF_SIZE);
+  dst = (char*)malloc(BUF_SIZE);
 }
 
-LZ4F_errorCode_t decompress() {
-  LZ4F_errorCode_t r;
-  LZ4F_decompressionContext_t ctx;
-  char *src, *buf = NULL;
-  size_t n, k;
+size_t LZ4JS_read(void* ptr, char* buf, size_t size) {
+  return EM_ASM_INT({return LZ4JS_read($0, $1, $2)}, ptr, buf, size);
+}
 
-  r = LZ4F_createDecompressionContext(&ctx, LZ4F_VERSION);
-  if (LZ4F_isError(r)) {
-    EM_ASM_INT({LZ4JS_setError($0)}, LZ4F_getErrorName(r));
-    return r;
+void LZ4JS_write(void* ptr, char* buf, size_t size) {
+  EM_ASM_INT({LZ4JS_write($0, $1, $2)}, ptr, buf, size);
+}
+
+int LZ4JS_validate(void* ptr, LZ4F_errorCode_t r) {
+  int isError;
+  if (isError = LZ4F_isError(r)) {
+    const char* errorName = LZ4F_getErrorName(r);
+    EM_ASM_INT({LZ4JS_error($0, $1)}, ptr, errorName);
   }
-  r = 1;
+  return isError ? 0 : 1;
+}
 
-  src = malloc(BUF_SIZE);
-  buf = malloc(DECOMPRESS_BUF_SIZE);
+LZ4JS_compressionContext_t* LZ4JS_createCompressionContext(LZ4F_blockSizeID_t blockSizeID, LZ4F_blockMode_t blockMode, LZ4F_contentChecksum_t contentChecksum, unsigned int compressionLevel) {
+  LZ4JS_compressionContext_t* cctxPtr;
 
-  for (;;) {
-    size_t dstSize = DECOMPRESS_BUF_SIZE;
-    size_t srcSize = BUF_SIZE;
-    size_t offset = 0;
+  cctxPtr = malloc(sizeof(LZ4JS_compressionContext_t));
+  if (LZ4F_isError(LZ4F_createCompressionContext(&cctxPtr->cctx, LZ4F_VERSION))) {
+    free(cctxPtr);
+    return NULL;
+  };
 
-    k = EM_ASM_INT({return LZ4JS_read($0, $1)}, src, BUF_SIZE);
-    if (!k) break;
-
-    while ((offset < k) || (dstSize == DECOMPRESS_BUF_SIZE)) {
-      size_t remaining = k - offset;
-      dstSize = DECOMPRESS_BUF_SIZE;
-      n = LZ4F_decompress(ctx, buf, &dstSize, src + offset, &remaining, NULL);
-      if (LZ4F_isError(n)) {
-        r = n;
-        goto cleanup;
-      }
-
-      offset += remaining;
-      if (dstSize) EM_ASM_INT({LZ4JS_write($0, $1)}, buf, dstSize);
-      if (!n) break;
-    }
+  cctxPtr->preferences = (LZ4F_preferences_t){
+    { blockSizeID, blockMode, contentChecksum, LZ4F_frame, 0, { 0, 0 } },
+    compressionLevel,   /* compression level */
+    0,   /* autoflush */
+    { 0, 0, 0, 0 },  /* reserved, must be set to 0 */
+  };
+  size_t _dstMaxSize = LZ4F_compressBound(BUF_SIZE, &cctxPtr->preferences);
+  if (_dstMaxSize > dstMaxSize) {
+    free(dst);
+    dstMaxSize = _dstMaxSize;
+    dst = (char*)malloc(dstMaxSize);
   }
+  return cctxPtr;
+}
 
-  r = 0;
+void LZ4JS_freeCompressionContext(LZ4JS_compressionContext_t* cctxPtr) {
+  LZ4F_freeCompressionContext(cctxPtr->cctx);
+  free(cctxPtr);
+}
 
- cleanup:
-  if (ctx) LZ4F_freeDecompressionContext(ctx);
-  if (LZ4F_isError(r)) EM_ASM_INT({LZ4JS_setError($0)}, LZ4F_getErrorName(r));
-  free(src);
-  free(buf);
-  return r;
+int LZ4JS_compressBegin(LZ4JS_compressionContext_t* cctxPtr) {
+  size_t n = LZ4F_compressBegin(cctxPtr->cctx, dst, dstMaxSize, &cctxPtr->preferences);
+  if (LZ4JS_validate(cctxPtr, n)) {
+    LZ4JS_write(cctxPtr, dst, n);
+    return 1;
+  }
+  return 0;
+}
+
+int LZ4JS_compressUpdate(LZ4JS_compressionContext_t* cctxPtr) {
+  size_t n = LZ4F_compressUpdate(cctxPtr->cctx, dst, dstMaxSize, src, LZ4JS_read(cctxPtr, src, BUF_SIZE), NULL);
+  if (LZ4JS_validate(cctxPtr, n)) {
+    LZ4JS_write(cctxPtr, dst, n);
+    return 1;
+  }
+  return 0;
+}
+
+int LZ4JS_compressEnd(LZ4JS_compressionContext_t* cctxPtr) {
+  size_t n = LZ4F_compressEnd(cctxPtr->cctx, dst, dstMaxSize, NULL);
+  if (LZ4JS_validate(cctxPtr, n)) {
+    LZ4JS_write(cctxPtr, dst, n);
+    return 1;
+  }
+  return 0;
+}
+
+LZ4F_decompressionContext_t* LZ4JS_createDecompressionContext() {
+  LZ4F_decompressionContext_t* dctxPtr;
+  dctxPtr = malloc(sizeof(LZ4F_decompressionContext_t));
+  if (LZ4F_isError(LZ4F_createDecompressionContext(dctxPtr, LZ4F_VERSION))) {
+    return NULL;
+  }
+  if (BUF_SIZE > dstMaxSize) {
+    free(dst);
+    dstMaxSize = BUF_SIZE;
+    dst = (char*)malloc(dstMaxSize);
+  }
+  return dctxPtr;
+}
+
+void LZ4JS_freeDecompressionContext(LZ4F_decompressionContext_t* dctxPtr) {
+  LZ4F_freeDecompressionContext(*dctxPtr);
+}
+
+int LZ4JS_decompress(LZ4F_decompressionContext_t* dctxPtr) {
+  size_t k = LZ4JS_read(dctxPtr, src, BUF_SIZE);
+  size_t dstSize = BUF_SIZE;
+  size_t offset = 0;
+
+  while ((offset < k) || (dstSize == BUF_SIZE)) {
+    size_t srcSize = k - offset;
+    size_t n = LZ4F_decompress(*dctxPtr, dst, &dstSize, src + offset, &srcSize, NULL);
+    if (!LZ4JS_validate(dctxPtr, n)) return 0;
+    offset += srcSize;
+    if (dstSize) LZ4JS_write(dctxPtr, dst, dstSize);
+    if (!n) break;
+  }
+  return 1;
 }
