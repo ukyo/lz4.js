@@ -44,7 +44,7 @@ compress to a lz4 buffer.
 
 * source `Uint8Array | Buffer`
 * options
-    * compressLevel `number` (range of `0-16`, default is `0`)
+    * compressionLevel `number` (range of `0-16`, default is `0`)
     * blockMaxSize `number` (`lz4.BLOCK_MAX_SIZE_XX`, default is `lz4.BLOCK_MAX_SIZE_4MB`)
     * blockIndependent `boolean` (default is false)
     * contentChecksum `boolean` (default is false)
@@ -61,13 +61,11 @@ decompress a lz4 buffer.
 
 create a nodejs transform stream.
 
-* source `Uint8Array | Buffer`
 * options
-    * compressLevel `number` (range of `0-16`, default is `0`)
+    * compressionLevel `number` (range of `0-16`, default is `0`)
     * blockMaxSize `number` (`lz4.BLOCK_MAX_SIZE_XX`, default is `lz4.BLOCK_MAX_SIZE_4MB`)
     * blockIndependent `boolean` (default is false)
     * contentChecksum `boolean` (default is false)
-* return `Uint8Array | Buffer`
 
 ### lz4.createDecompressStream()
 
