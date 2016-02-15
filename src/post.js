@@ -28,7 +28,7 @@ function LZ4JS_error(id, ptr) {
   var BLOCK_MAX_SIZE_4MB = lz4['BLOCK_MAX_SIZE_4MB'] = 7;
 
   var defaultCompressOptions = {
-    blockMaxSize: BLOCK_MAX_SIZE_64KB,
+    blockMaxSize: BLOCK_MAX_SIZE_4MB,
     blockIndependent: false,
     contentChecksum: false,
     compressionLevel: 0,
