@@ -59,6 +59,13 @@ function LZ4JS_error(id, ptr) {
     return ret;
   }
 
+  function wrapForNode(fn) {
+    return function(src) {
+      var uint8 = fn.apply(null, arguments);
+      return Buffer.isBuffer(src) ? new Buffer(uint8.buffer, uint8.byteOffset, uint8.byteOffset + uint8.length) : uint8;
+    };
+  }
+
   function BaseCompressor(options) {
     this.options = assign({}, defaultCompressOptions, options);
     this.cctxPtr = _LZ4JS_createCompressionContext(
@@ -249,11 +256,7 @@ function LZ4JS_error(id, ptr) {
     return concat(compressor.buffers);
   }
 
-  function compressForNode(src, options) {
-    var uint8 = compress(src, options);
-    return Buffer.isBuffer(src) ? new Buffer(uint8.buffer, uint8.byteOffset, uint8.byteOffset + uint8.length) : uint8;
-  }
-  lz4['compress'] = ENVIRONMENT_IS_NODE ? compressForNode : compress;
+  lz4['compress'] = ENVIRONMENT_IS_NODE ? wrapForNode(compress) : compress;
 
   function Decompressor(src, options) {
     BaseDecompressor.call(this);
@@ -288,10 +291,6 @@ function LZ4JS_error(id, ptr) {
     return src instanceof Uint8Array ? concated : new Buffer(concated.buffer);
   };
 
-  function decompressForNode(src) {
-    var uint8 = decompress(src);
-    return Buffer.isBuffer(src) ? new Buffer(uint8.buffer, uint8.byteOffset, uint8.byteOffset + uint8.length) : uint8;
-  }
-  lz4['decompress'] = ENVIRONMENT_IS_NODE ? decompressForNode : decompress;
+  lz4['decompress'] = ENVIRONMENT_IS_NODE ? wrapForNode(decompress) : decompress;
 
 }).call(this);
