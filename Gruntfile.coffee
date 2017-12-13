@@ -32,7 +32,6 @@ RELEASE_ARGS = [
   '--closure 1'
   '--llvm-lto 1'
   '-s NO_FILESYSTEM=1'
-  '-s NO_BROWSER=1'
   '-s EXPORTED_RUNTIME_METHODS=[]'
   "-s TOTAL_MEMORY=#{TOTAL_MEMORY}"
 ].join(' ')
