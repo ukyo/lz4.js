@@ -81,34 +81,34 @@ create a nodejs transform stream.
 
 ### Init
 
-Get repos.
+Clone the repo.
 
 ```
-git clone git@github.com:ukyo/lz4.js.git
+git clone https://github.com/ukyo/lz4.js.git
 ```
 
-If you don't install the grunt-cli run below.
+If you don't have grunt-cli installed, run the following.
 
 ```
 npm install -g grunt-cli
 ```
 
-Install dev dependencies
+Install the dev dependencies.
 
 ```
 cd path/to/lz4.js
 npm install
 ```
 
-Download original LZ4 repos and compile for development.
+Download the original LZ4 repo and compile for development.
 
 ```
 grunt init
 ```
 
-### Write codes
+### Write code
 
-Watch codes update and test.
+Watch for code updates and run tests.
 
 ```
 grunt watch
@@ -121,3 +121,4 @@ Release build.
 ```
 grunt release
 ```
+
