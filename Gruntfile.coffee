@@ -32,7 +32,6 @@ RELEASE_ARGS = [
   '--closure 1'
   '--llvm-lto 1'
   '-s NO_FILESYSTEM=1'
-  '-s NO_BROWSER=1'
   '-s EXPORTED_RUNTIME_METHODS=[]'
   "-s TOTAL_MEMORY=#{TOTAL_MEMORY}"
 ].join(' ')
@@ -44,7 +43,12 @@ module.exports = (grunt) ->
       compileDev:
         cmd: "emcc #{INCLUDES} #{C_FILES} #{LIBS} -o dev/_lz4.js -s TOTAL_MEMORY=#{TOTAL_MEMORY} #{EXPORTED_FUNCTIONS}"
       compileRelease:
-        cmd: "emcc #{RELEASE_ARGS} #{INCLUDES} #{C_FILES} #{LIBS} -o _lz4.js #{POST_JS} -s TOTAL_MEMORY=#{TOTAL_MEMORY}  #{EXPORTED_FUNCTIONS}"
+        cmd: "emcc #{RELEASE_ARGS} #{INCLUDES} #{C_FILES} #{LIBS} -o _lz4.js #{POST_JS} -s TOTAL_MEMORY=#{TOTAL_MEMORY} #{EXPORTED_FUNCTIONS}"
+      fetchLib:
+        cmd: "git submodule update --init lz4"
+      buildLib:
+        cwd: 'lz4'
+        cmd: "emmake make lib"
 
     concat:
       dev:
@@ -85,6 +89,8 @@ module.exports = (grunt) ->
   grunt.registerTask 'compile:release', ['exec:compileRelease']
   grunt.registerTask 'init', [
     'mkdir:dev'
+    'exec:fetchLib'
+    'exec:buildLib'
     'compile:dev'
   ]
   grunt.registerTask 'test:dev', [
