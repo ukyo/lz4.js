@@ -18,7 +18,13 @@ const debugTests = setupTests({ inspectBrk: true });
 const runTests = setupTests();
 
 const initTask = series(createDevDir, fetchLib, buildLib, rollupBundle, compileDev);
-const release = series(createDevDir, rollupBundle, compileAsmRelease, compileWasmRelease, cleanRelease);
+const release = series(
+  createDevDir,
+  rollupBundle,
+  compileAsmRelease, concatAsmRelease,
+  compileWasmRelease, concatWasmRelease,
+  cleanRelease
+);
 const releaseAsmTask = series(createDevDir, rollupBundle, compileAsmRelease, concatAsmRelease, cleanRelease);
 const releaseWasmTask = series(createDevDir, rollupBundle, compileWasmRelease, concatWasmRelease, cleanRelease);
 const testDevTask = series(createDevDir, rollupBundle, compileDev, runTests, cleanTest);

@@ -8,13 +8,13 @@ function concatDev(done) {
 }
 
 function concatAsmRelease(done) {
-  return src(['src/header.js', '_lz4asm.js', 'src/footer.js'])
+  return src(['src/header.js', '_lz4.js', 'src/footer.js'])
     .pipe(concat('lz4asm.js'))
     .pipe(dest('.'));
 }
 
 function concatWasmRelease(done) {
-  return src(['src/header.js', '_lz4wasm.js', 'src/footer.js'])
+  return src(['src/header.js', '_lz4.js', 'src/footer.js'])
     .pipe(concat('lz4wasm.js'))
     .pipe(dest('.'));
 }

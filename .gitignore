@@ -9,3 +9,4 @@ node_modules/
 dev/
 test/_dst1.txt
 test/_dst2.txt
+lz4/
