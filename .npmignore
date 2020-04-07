@@ -1,8 +1,8 @@
 .gitignore
 dev/
+tmp/
 example/
 lz4/
 node_modules/
 test/
-bower.json
-Gruntfile.coffee
+rollup.config.js

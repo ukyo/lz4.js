@@ -2,7 +2,7 @@
   "name": "lz4-asm",
   "version": "0.4.0",
   "description": "A JavaScript binding of LZ4 for the browser.",
-  "main": "index.js",
+  "main": "dist/lz4wasm.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "rollup": "rollup --config ./rollup.config.js"
@@ -11,6 +11,9 @@
     "lz4"
   ],
   "author": "ukyo",
+  "contributors": [
+    "Alex Stepchenkov <stukak@gmail.com> (https://github.com/STUkh)"
+  ],
   "license": "MIT",
   "devDependencies": {
     "@rollup/plugin-buble": "^0.21.1",

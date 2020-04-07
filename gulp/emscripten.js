@@ -63,11 +63,11 @@ function compileDev(cb) {
 }
 
 function compileAsmRelease(cb) {
-  exec(`emcc ${ASM_RELEASE_ARGS} ${INCLUDES} ${C_FILES} ${LIBS} -o _lz4.js ${POST_JS} ${EXPORTED_FUNCTIONS}`, cb);
+  exec(`emcc ${ASM_RELEASE_ARGS} ${INCLUDES} ${C_FILES} ${LIBS} -o tmp/_lz4.js ${POST_JS} ${EXPORTED_FUNCTIONS}`, cb);
 }
 
 function compileWasmRelease(cb) {
-  exec(`emcc ${WASM_RELEASE_ARGS} ${INCLUDES} ${C_FILES} ${LIBS} -o _lz4.js ${POST_JS} ${EXPORTED_FUNCTIONS}`, cb);
+  exec(`emcc ${WASM_RELEASE_ARGS} ${INCLUDES} ${C_FILES} ${LIBS} -o tmp/_lz4.js ${POST_JS} ${EXPORTED_FUNCTIONS}`, cb);
 }
 
 function fetchLib(cb) {

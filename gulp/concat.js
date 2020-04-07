@@ -8,15 +8,18 @@ function concatDev(done) {
 }
 
 function concatAsmRelease(done) {
-  return src(['src/header.js', '_lz4.js', 'src/footer.js'])
+  return src(['src/header.js', 'tmp/_lz4.js', 'src/footer.js'])
     .pipe(concat('lz4asm.js'))
-    .pipe(dest('.'));
+    .pipe(dest('dist'));
 }
 
 function concatWasmRelease(done) {
-  return src(['src/header.js', '_lz4.js', 'src/footer.js'])
+  src(['src/header.js', 'tmp/_lz4.js', 'src/footer.js'])
     .pipe(concat('lz4wasm.js'))
-    .pipe(dest('.'));
+    .pipe(dest('dist'));
+
+  return src(['tmp/_lz4.wasm'])
+    .pipe(dest('dist'));
 }
 
 module.exports = {
