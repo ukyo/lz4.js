@@ -1,296 +1,54 @@
-var LZ4JS_instances = {};
+import Compressor from './js/Compressor';
+import Decompressor from './js/Decompressor';
+import { LZ4JS_instances, LZ4JS_read, LZ4JS_write, LZ4JS_error } from './js/instance.service';
 
-function LZ4JS_read(id, srcPtr, size) {
-  return LZ4JS_instances[id].$read(srcPtr, size);
-}
+import CompressStream from './js/node/CompressStream';
+import DecompressStream from './js/node/DecompressStream';
 
-function LZ4JS_write(id, dstPtr, size) {
-  return LZ4JS_instances[id].$write(dstPtr, size);
-}
+import { BLOCK_MAX_SIZE } from './js/constants';
 
-function LZ4JS_error(id, ptr) {
-  LZ4JS_instances[id].$error = new Error(UTF8ToString(ptr));
-}
+var lz4js = {
+  'BLOCK_MAX_SIZE': BLOCK_MAX_SIZE,
+  'LZ4JS_instances': LZ4JS_instances,
+  'LZ4JS_read': LZ4JS_read,
+  'LZ4JS_write': LZ4JS_write,
+  'LZ4JS_error': LZ4JS_error,
+};
 
-(function(){
-  var lz4 = this;
-  if (typeof define === 'function' && define['amd']) {
-    define('lz4', function () { return lz4 });
-  } else if (ENVIRONMENT_IS_NODE) {
-    module['exports'] = lz4;
-  }
-  _LZ4JS_init();
+lz4js['compress'] = function (src, options) {
+  const compressor = new Compressor(options);
+  return compressor.compress(src);
+};
 
-  var BUF_SIZE = 8192;
-  var BLOCK_MAX_SIZE_64KB = lz4['BLOCK_MAX_SIZE_64KB'] = 4;
-  var BLOCK_MAX_SIZE_256KB = lz4['BLOCK_MAX_SIZE_256KB'] = 5;
-  var BLOCK_MAX_SIZE_1MB = lz4['BLOCK_MAX_SIZE_1MB'] = 6;
-  var BLOCK_MAX_SIZE_4MB = lz4['BLOCK_MAX_SIZE_4MB'] = 7;
+lz4js['decompress'] = function (src) {
+  const decompressor = new Decompressor();
+  return decompressor.decompress(src);
+};
 
-  var defaultCompressOptions = {
-    blockMaxSize: BLOCK_MAX_SIZE_4MB,
-    blockIndependent: false,
-    contentChecksum: false,
-    compressionLevel: 0,
+if (ENVIRONMENT_IS_NODE) {
+  lz4js['createCompressStream'] = function (options) {
+    return new CompressStream(options);
   };
 
-  function assign(source) {
-    Array.prototype.slice.call(arguments, 1).forEach(function(o) {
-      if (o == null || typeof o !== 'object') return;
-      Object.keys(o).forEach(function(k) {
-        source[k] = o[k];
-      });
+  lz4js['createDecompressStream'] = function () {
+    return new DecompressStream();
+  };
+}
+
+// Replace Thenable interface with Promise for Asynchronous modules
+if (Module['then']) {
+  delete Module['then'];
+  Module['ready'] = new Promise((resolve, reject) => {
+    if (Module['calledRun']) {
+      return resolve(Module);
+    }
+    addOnPostRun(function () {
+      return resolve(Module);
     });
-    return source;
-  }
-
-  function concat(buffers) {
-    var n, ret, offset = 0;
-    n = buffers.map(function(buffer) {
-      return buffer.length;
-    }).reduce(function(a, b) {
-      return a + b;
-    }, 0);
-    ret = new Uint8Array(n);
-    buffers.forEach(function(buffer) {
-      ret.set(buffer, offset);
-      offset += buffer.length;
-    });
-    return ret;
-  }
-
-  function wrapForNode(fn) {
-    return function(src) {
-      var uint8 = fn.apply(null, arguments);
-      return Buffer.isBuffer(src) ? new Buffer(uint8.buffer, uint8.byteOffset, uint8.byteOffset + uint8.length) : uint8;
+    Module['onAbort'] = function (what) {
+      return reject(what);
     };
-  }
+  });
+}
 
-  function BaseCompressor(options) {
-    this.options = assign({}, defaultCompressOptions, options);
-    this.cctxPtr = _LZ4JS_createCompressionContext(
-      this.options.blockMaxSize,
-      +this.options.blockIndependent,
-      +this.options.contentChecksum,
-      this.options.compressionLevel
-    );
-    if (!this.cctxPtr) throw new Error('LZ4JS_createCompressionContext');
-    LZ4JS_instances[this.cctxPtr] = this;
-    this.$error = null;
-  }
-
-  BaseCompressor.prototype.compressBegin = function(first_argument) {
-    _LZ4JS_compressBegin(this.cctxPtr) || this.cleanup();
-  };
-
-  BaseCompressor.prototype.compressUpdate = function(first_argument) {
-    _LZ4JS_compressUpdate(this.cctxPtr) || this.cleanup();
-  };
-
-  BaseCompressor.prototype.compressEnd = function(first_argument) {
-    _LZ4JS_compressEnd(this.cctxPtr);
-    this.cleanup();
-  };
-
-  BaseCompressor.prototype.cleanup = function() {
-    _LZ4JS_freeCompressionContext(this.cctxPtr);
-    delete LZ4JS_instances[this.cctxPtr];
-    if (this.$error) throw this.$error;
-  };
-
-
-  function BaseDecompressor() {
-    this.dctxPtr = _LZ4JS_createDecompressionContext();
-    if (!this.dctxPtr) throw new Error('LZ4JS_createDecompressionContext');
-    LZ4JS_instances[this.dctxPtr] = this;
-  }
-
-  BaseDecompressor.prototype.decompress = function() {
-    _LZ4JS_decompress(this.dctxPtr) || this.cleanup();
-  };
-
-  BaseDecompressor.prototype.cleanup = function() {
-    _LZ4JS_freeDecompressionContext(this.dctxPtr);
-    delete LZ4JS_instances[this.dctxPtr];
-    if (this.$error) throw this.$error;
-  };
-
-
-  ENVIRONMENT_IS_NODE && (function() {
-    var Transform = require('stream').Transform;
-    var inherits = require('util').inherits;
-
-    function CompressStream(options) {
-      BaseCompressor.call(this, options);
-      Transform.call(this, this.options);
-      this.initialized = false;
-      this.srcSize = 0;
-      this.dstSize = 0;
-      this.src = new Buffer(0);
-      this.dst = new Buffer(0);
-    }
-    inherits(CompressStream, Transform);
-    assign(CompressStream.prototype, BaseCompressor.prototype);
-
-
-    CompressStream.prototype.$read = function(srcPtr, size) {
-      HEAPU8.set(new Uint8Array(this.src.buffer, this.src.byteOffset, this.srcSize), srcPtr);
-      return this.srcSize;
-    };
-
-    CompressStream.prototype.$write = function(dstPtr, size) {
-      this.dst = new Buffer(HEAPU8.buffer).slice(dstPtr, dstPtr + size);
-      this.push(new Buffer(this.dst));
-    }
-
-    CompressStream.prototype['_transform'] = function(chunk, encoding, callback) {
-      try {
-        if (!this.initialized) {
-          this.compressBegin();
-          this.initialized = true;
-        }
-        var offset;
-
-        for (offset = 0; offset < chunk.length; offset += BUF_SIZE) {
-          this.srcSize = Math.min(chunk.length - offset, BUF_SIZE);
-          this.src = chunk.slice(offset, offset + this.srcSize);
-          this.compressUpdate();
-        }
-        callback();
-      } catch (error) {
-        callback(error);
-      }
-    };
-
-    CompressStream.prototype['_flush'] = function(callback) {
-      try {
-        this.compressEnd();
-        callback();
-      } catch (error) {
-        callback(error);
-      }
-    };
-
-    lz4['createCompressStream'] = function(options) {
-      return new CompressStream(options);
-    };
-
-    function DecompressStream() {
-      BaseDecompressor.call(this);
-      Transform.call(this, {});
-      this.srcSize = 0;
-      this.dstSize = 0;
-      this.src = new Buffer(0);
-      this.dst = new Buffer(0);
-    }
-    inherits(DecompressStream, Transform);
-    assign(DecompressStream.prototype, BaseDecompressor.prototype);
-
-    DecompressStream.prototype.$read = function(srcPtr, size) {
-      HEAPU8.set(new Uint8Array(this.src.buffer, this.src.byteOffset, this.srcSize), srcPtr);
-      return this.srcSize;
-    };
-
-    DecompressStream.prototype.$write = function(dstPtr, size) {
-      this.dst = new Buffer(HEAPU8.buffer).slice(dstPtr, dstPtr + size);
-      this.push(new Buffer(this.dst));
-    };
-
-    DecompressStream.prototype['_transform'] = function(chunk, encoding, callback) {
-      try {
-        var offset;
-        var bufs = [];
-        var totalLength = 0;
-        for(offset = 0; offset < chunk.length; offset += BUF_SIZE) {
-          this.srcSize = Math.min(chunk.length - offset, BUF_SIZE);
-          this.src = chunk.slice(offset, offset + this.srcSize);
-          this.decompress();
-        }
-        callback();
-      } catch (error) {
-        callback(error);
-      }
-    };
-
-    DecompressStream.prototype['_flush'] = function(callback) {
-      this.cleanup();
-      callback();
-    };
-
-    lz4['createDecompressStream'] = function() {
-      return new DecompressStream();
-    }
-  })();
-
-
-  function Compressor(src, options) {
-    BaseCompressor.call(this, options);
-    this.src = src;
-    this.offset = 0;
-    this.buffers = [];
-    this.srcSize = 0;
-  }
-  assign(Compressor.prototype, BaseCompressor.prototype);
-
-  Compressor.prototype.$write = function (dstPtr, size) {
-    this.buffers.push(new Uint8Array(HEAPU8.subarray(dstPtr, dstPtr + size)));
-  };
-
-  Compressor.prototype.$read = function(srcPtr, size) {
-    HEAPU8.set(this.src.subarray(this.offset, this.offset + this.srcSize), srcPtr);
-    return this.srcSize;
-  };
-
-  Compressor.prototype.compressBody = function() {
-    for (; this.offset < this.src.length; this.offset += BUF_SIZE) {
-      this.srcSize = Math.min(this.src.length - this.offset, BUF_SIZE);
-      this.compressUpdate();
-    }
-  };
-
-  function compress(src, options) {
-    var compressor = new Compressor(src, options);
-    compressor.compressBegin();
-    compressor.compressBody();
-    compressor.compressEnd();
-    return concat(compressor.buffers);
-  }
-
-  lz4['compress'] = ENVIRONMENT_IS_NODE ? wrapForNode(compress) : compress;
-
-  function Decompressor(src, options) {
-    BaseDecompressor.call(this);
-    this.src = src;
-    this.offset = 0;
-    this.buffers = [];
-    this.srcSize = 0;
-  }
-  assign(Decompressor.prototype, BaseDecompressor.prototype);
-
-  Decompressor.prototype.$write = function(dstPtr, size) {
-    this.buffers.push(new Uint8Array(HEAPU8.subarray(dstPtr, dstPtr + size)));
-  };
-
-  Decompressor.prototype.$read = function(srcPtr, size) {
-    HEAPU8.set(this.src.subarray(this.offset, this.offset + this.srcSize), srcPtr);
-    return this.srcSize;
-  };
-
-  Decompressor.prototype.decompressAll = function() {
-    for (; this.offset < this.src.length; this.offset += BUF_SIZE) {
-      this.srcSize = Math.min(this.src.length - this.offset, BUF_SIZE);
-      this.decompress();
-    }
-    this.cleanup();
-  };
-
-  function decompress(src) {
-    var decompressor = new Decompressor(src);
-    decompressor.decompressAll();
-    var concated = concat(decompressor.buffers);
-    return src instanceof Uint8Array ? concated : new Buffer(concated.buffer);
-  };
-
-  lz4['decompress'] = ENVIRONMENT_IS_NODE ? wrapForNode(decompress) : decompress;
-
-}).call(this);
+Module['lz4js'] = lz4js;

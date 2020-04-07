@@ -1,1 +1,1 @@
-var lz4={};(function(){
+/*! lz4.js Released under the MIT license. https://github.com/STUkh/lz4.js */
