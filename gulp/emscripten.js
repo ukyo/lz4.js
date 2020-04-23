@@ -32,7 +32,7 @@ const DEV_ARGS = [
   // `-s EXPORT_ES6=1`,
   // `-s USE_ES6_IMPORT_META=0`,
   // `-s WASM=0`,
-  // `-s WASM_ASYNC_COMPILATION=0`
+  `-s WASM_ASYNC_COMPILATION=0`
 ];
 
 const RELEASE_ARGS = [
@@ -51,7 +51,7 @@ const WASM_RELEASE_ARGS = RELEASE_ARGS.concat([
 const ASM_RELEASE_ARGS = RELEASE_ARGS.concat([
   // ASM.js arguments
   "-s WASM=0",
-  "-s WASM_ASYNC_COMPILATION=0"
+  // "-s WASM_ASYNC_COMPILATION=0"
 ]).join(" ");
 
 function buildLib(cb) {
