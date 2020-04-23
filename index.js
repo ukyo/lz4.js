@@ -1,1 +1,1 @@
-module.exports = require('./lz4.js');
+module.exports = require('./dist/lz4wasm.js');

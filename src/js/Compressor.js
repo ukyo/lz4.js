@@ -21,6 +21,7 @@ export default class Compressor extends aggregation(BaseCompressor, ReadWriteMix
     let result;
 
     this.src = src;
+    this.createCompressionContext(src.length);
     this.compressBegin();
     this.compressBody();
     this.compressEnd();

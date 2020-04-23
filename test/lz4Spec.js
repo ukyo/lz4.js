@@ -1,4 +1,4 @@
-var lz4init = require('../lz4.js');
+var lz4init = require('../dev/lz4.js');
 var expect = require('chai').expect;
 var fs = require('fs');
 

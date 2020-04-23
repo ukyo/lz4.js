@@ -51,4 +51,5 @@ if (Module['then']) {
   });
 }
 
+Module['BLOCK_MAX_SIZE'] = BLOCK_MAX_SIZE;
 Module['lz4js'] = lz4js;

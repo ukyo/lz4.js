@@ -19,6 +19,7 @@ try {
       this.dstSize = 0;
       this.src = Buffer['alloc'](0);
       this.dst = Buffer['alloc'](0);
+      this.createCompressionContext(0);
     }
 
     _transform(chunk, encoding, callback) {
