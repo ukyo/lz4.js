@@ -28,17 +28,16 @@ export default class BaseCompressor {
 
   createCompressionContext(contentSize) {
     this.cctxPtr = _LZ4JS_createCompressionContext(
-      this.options.blockSizeID,
-      this.options.blockMode,
-      this.options.contentChecksumFlag,
-      this.options.frameType,
+      this.options.frameInfo.blockSizeID,
+      this.options.frameInfo.blockMode,
+      this.options.frameInfo.contentChecksumFlag,
+      this.options.frameInfo.frameType,
       contentSize || 0, /* Size of uncompressed content ; 0 == unknown */
-      this.options.dictID,
-      this.options.blockChecksumFlag,
-      this.options.compressionLevel,
-      this.options.autoFlush,
-      this.options.favorDecSpeed,
-      this.options.reserved,
+      this.options.frameInfo.dictID,
+      this.options.frameInfo.blockChecksumFlag,
+      this.options.preferences.compressionLevel,
+      this.options.preferences.autoFlush,
+      this.options.preferences.favorDecSpeed,
     );
     if (!this.cctxPtr) throw new Error('LZ4JS_createCompressionContext');
     LZ4JS_instances[this.cctxPtr] = this;
