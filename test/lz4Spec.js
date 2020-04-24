@@ -1,4 +1,4 @@
-var { lz4js: lz4 } = require('../dev/lz4.js')();
+var { lz4js: lz4 } = require('../dist/lz4wasm.js')();
 var expect = require('chai').expect;
 var fs = require('fs');
 

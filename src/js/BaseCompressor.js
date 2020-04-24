@@ -56,40 +56,40 @@ EndMark: The flow of blocks ends when the last data block has a size of “0”.
 export default class BaseCompressor {
   constructor(options = {}) {
     this.defaultFrameInfo = {
-      blockSizeID: BLOCK_MAX_SIZE["4MB"], /* max64KB, max256KB, max1MB, max4MB; 0 == default */
-      blockMode: 0, /* LZ4F_blockLinked, LZ4F_blockIndependent; 0 == default */
-      contentChecksumFlag: 0, /* 1: frame terminated with 32-bit checksum of decompressed data; 0: disabled (default) */
-      frameType: 0, /* read-only field : LZ4F_frame or LZ4F_skippableFrame */
-      dictID: 0, /* Dictionary ID, sent by compressor to help decoder select correct dictionary; 0 == no dictID provided */
-      blockChecksumFlag: 0, /* 1: each block followed by a checksum of block's compressed data; 0: disabled (default) */
+      "blockSizeID": BLOCK_MAX_SIZE["4MB"], /* max64KB, max256KB, max1MB, max4MB; 0 == default */
+      "blockMode": 0, /* LZ4F_blockLinked, LZ4F_blockIndependent; 0 == default */
+      "contentChecksumFlag": 0, /* 1: frame terminated with 32-bit checksum of decompressed data; 0: disabled (default) */
+      "frameType": 0, /* read-only field : LZ4F_frame or LZ4F_skippableFrame */
+      "dictID": 0, /* Dictionary ID, sent by compressor to help decoder select correct dictionary; 0 == no dictID provided */
+      "blockChecksumFlag": 0, /* 1: each block followed by a checksum of block's compressed data; 0: disabled (default) */
     };
 
     this.defaultPreferences = {
       // frameInfo should be included further
-      compressionLevel: 0, /* 0: default (fast mode); values > LZ4HC_CLEVEL_MAX count as LZ4HC_CLEVEL_MAX; values < 0 trigger "fast acceleration" */
-      autoFlush: 1, /* 1: always flush; reduces usage of internal buffers */
-      favorDecSpeed: 1, /* 1: parser favors decompression speed vs compression ratio. Only works for high compression modes (>= LZ4HC_CLEVEL_OPT_MIN) */  /* v1.8.2+ */
+      "compressionLevel": 0, /* 0: default (fast mode); values > LZ4HC_CLEVEL_MAX count as LZ4HC_CLEVEL_MAX; values < 0 trigger "fast acceleration" */
+      "autoFlush": 1, /* 1: always flush; reduces usage of internal buffers */
+      "favorDecSpeed": 1, /* 1: parser favors decompression speed vs compression ratio. Only works for high compression modes (>= LZ4HC_CLEVEL_OPT_MIN) */  /* v1.8.2+ */
     };
 
     this.options = {};
-    this.options.frameInfo = Object.assign({}, this.defaultFrameInfo, options.frameInfo);
-    this.options.preferences = Object.assign({}, this.options.frameInfo, this.preferences, options.preferences);
+    this.options['frameInfo'] = Object.assign({}, this.defaultFrameInfo, options['frameInfo']);
+    this.options['preferences'] = Object.assign({}, this.options['frameInfo'], this.defaultPreferences, options['preferences']);
 
     this.$error = null;
   }
 
   createCompressionContext(contentSize) {
     this.cctxPtr = _LZ4JS_createCompressionContext(
-      this.options.frameInfo.blockSizeID,
-      this.options.frameInfo.blockMode,
-      this.options.frameInfo.contentChecksumFlag,
-      this.options.frameInfo.frameType,
+      this.options['frameInfo']['blockSizeID'],
+      this.options['frameInfo']['blockMode'],
+      this.options['frameInfo']['contentChecksumFlag'],
+      this.options['frameInfo']['frameType'],
       contentSize || 0, /* Size of uncompressed content ; 0 == unknown */
-      this.options.frameInfo.dictID,
-      this.options.frameInfo.blockChecksumFlag,
-      this.options.preferences.compressionLevel,
-      this.options.preferences.autoFlush,
-      this.options.preferences.favorDecSpeed,
+      this.options['frameInfo']['dictID'],
+      this.options['frameInfo']['blockChecksumFlag'],
+      this.options['preferences']['compressionLevel'],
+      this.options['preferences']['autoFlush'],
+      this.options['preferences']['favorDecSpeed'],
     );
     if (!this.cctxPtr) throw new Error('LZ4JS_createCompressionContext');
     LZ4JS_instances[this.cctxPtr] = this;
