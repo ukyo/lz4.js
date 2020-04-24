@@ -1,6 +1,58 @@
 import { LZ4JS_instances } from './instance.service';
 import { BLOCK_MAX_SIZE } from './constants'
 
+/*
+
+GENERAL STRUCTURE of LZ4 FRAME FORMAT
++-------------------------------+               +-------------------------+
+|         FRAME HEADER          |               |       FRAME FOOTER      |
++---------------+---------------+-------+-------+-----------+-------------+
+| MagicNb(...)  | F. Descriptor | Block | (...) | EndMark   | C. Checksum |
++---------------+---------------+-------+-------+-----------+-------------+
+| 4 bytes       | 3-15 bytes    |       |       | 0-4 bytes | 0-4 bytes   |
++---------------+---------------+-------+-------+-----------+-------------+
+
+FRAME DESCRIPTOR
++-----+----+----------------+-------------+----+
+| FLG | BD | (Content Size) | DictId      | HC |
++-----+----+----------------+-------------+----+
+| 1   | 1  | 0 - 8 bytes    | 0 - 4 bytes | 1  |
++-----+----+----------------+-------------+----+
+
+FLG byte
++-----------+---------+---------+------------+--------+------------+----------+--------+
+| BitNb     | 7-6     | 5       | 4          | 3      | 2          | 1        | 0      |
++-----------+---------+---------+------------+--------+------------+----------+--------+
+| FieldName | Version | B.Indep | B.Checksum | C.Size | C.Checksum | Reserved | DictId |
++-----------+---------+---------+------------+--------+------------+----------+--------+
+
+BD byte
++-----------+---------------+----------+
+| BitNb     | 6-5-4         | 3-2-1-0  |
++-----------+---------------+----------+
+| FieldName | Block MaxSize | Reserved |
++-----------+---------------+----------+
+
+BLOCK MAXIMUM SIZE
++-----+-----+-----+-----+-------+--------+------+------+
+| 0   | 1   | 2   | 3   | 4     | 5      | 6    | 7    |
++-----+-----+-----+-----+-------+--------+------+------+
+| N/A | N/A | N/A | N/A | 64 KB | 256 KB | 1 MB | 4 MB |
++-----+-----+-----+-----+-------+--------+------+------+
+
+DATA BLOCKS
++------------+------+------------------+
+| Block Size | data | (Block Checksum) |
++------------+------+------------------+
+| 4 bytes    |      | 0 - 4 bytes      |
++------------+------+------------------+
+
+Reserved bits MUST be 0
+Version should be 0x01
+EndMark: The flow of blocks ends when the last data block has a size of “0”. The size is expressed as a 32-bits value.
+
+*/
+
 export default class BaseCompressor {
   constructor(options = {}) {
     this.defaultFrameInfo = {

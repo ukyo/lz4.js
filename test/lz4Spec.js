@@ -7,6 +7,7 @@ const BD_OFFSET = 5;
 const BD_RESERVED = 4;
 
 describe('lz4', function () {
+  // Keep alive. Example for param WASM_ASYNC_COMPILATION=1
   // before(async function () {
   //   // Needed for asynchronous behavior
   //   console.log(lz4init)
@@ -154,6 +155,18 @@ describe('lz4', function () {
       expect(s.length).to.equal(source.length);
       expect(sameAll(s, source)).to.be.true;
       expect(c[FLG_OFFSET]).to.equal(76); // 0100 1100
+    });
+
+    it('Compress and decompress big amount of data', function () {
+      const toCompress = 'x'.repeat(1024 * 10000);
+      const toCompressBuf = Buffer.from(toCompress, "utf8");
+
+      const compressed = lz4.compress(toCompressBuf);
+      const decompressedBuf = lz4.decompress(compressed);
+      const decompressed = decompressedBuf.toString('utf8');
+      expect(decompressedBuf.length).to.equal(toCompressBuf.length);
+      expect(decompressed).to.equal(toCompress);
+      expect(compressed[FLG_OFFSET]).to.equal(72); // 0100 0100
     });
   });
 
