@@ -1,14 +1,9 @@
 # lz4.js
 
-LZ4 for browser
+LZ4 WASM, ASM.js and CLI for browser and Node with almost native performance.
+This package includes WASM, ASM.js module and variant that can be used in CLI.
 
 ## Install and Use
-
-### bower
-
-```
-bower install lz4
-```
 
 html
 
@@ -34,7 +29,7 @@ npm install lz4-asm -g
 lz4-asm -h
 ```
 
-### Module modes
+### WASM Module modes
 
 ### Asynchronouse module mode ( default )
 
@@ -90,6 +85,15 @@ const wasmModuleAsArrayBuffer = _base64ToArrayBuffer(wasmAsBase64);
 const lz4 = lz4init({ wasmBinary: wasmModuleAsArrayBuffer });
 ```
 
+### ASM.js Module modes
+
+Both `async` (default) and `sync` modes available for ASM.js module but with one important difference.
+For `sync` variant there **NO NEED for any extra setup**. Set `-s WASM_ASYNC_COMPILATION=0` option in `gulp/emscripten.js` and simply use as:
+```javascript
+const lz4 = lz4init();
+```
+
+It is much easier operate with ASM.js variant is sync mode, but for some cases it operate slower than WASM variant. You can see difference in tests if target different variants in top `require` statement.
 
 ## API
 
