@@ -2,7 +2,7 @@
 <html>
   <head>
     <title>lz4.js bench</title>
-    <script src="../dist/lz4wasm.js"></script>
+    <script src="../dev/lz4.js"></script>
   </head>
   <body>
     <div>
@@ -10,23 +10,27 @@
       <div id="result"></div>
     </div>
     <script>
+      const lz4init = lz4();
       window.onload = function () {
-        f.onchange = function (e) {
+        lz4init.ready.then((lz4module) => {
+          const { lz4js } = lz4module;
+          f.onchange = function (e) {
           var fr = new FileReader();
           fr.readAsArrayBuffer(e.target.files[0]);
           fr.onload = function () {
             var s = new Uint8Array(fr.result);
             var start = Date.now();
-            var c = lz4.compress(s);
+            var c = lz4js.compress(s);
             result.innerHTML +=
               "<div>compress: " + (Date.now() - start) + "ms</div>";
 
             start = Date.now();
-            lz4.decompress(c);
+            lz4js.decompress(c);
             result.innerHTML +=
               "<div>decompress: " + (Date.now() - start) + "ms</div>";
           };
         };
+        })
       };
     </script>
   </body>

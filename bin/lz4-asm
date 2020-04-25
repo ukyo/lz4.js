@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 const fs = require('fs');
-const { lz4js: lz4 } = require('../index.js')();
+const lz4init = require('../index.js')();
 
 const argv = require('yargs')
 .usage('Usage: lz4-asm input [options]')
@@ -60,25 +60,28 @@ const argv = require('yargs')
 .epilog('If you want to show more info, refer to https://github.com/Cyan4973/lz4/blob/master/lz4_Frame_format.md')
 .argv
 
-let inputStream;
-if (argv._.length) {
-  inputStream = fs.createReadStream(argv._[0]);
-} else {
-  process.stdin.resume();
-  inputStream = process.stdin;
-}
-const outputStream = argv.o ? fs.createWriteStream(argv.o) : process.stdout;
+(async function () {
+  const { lz4js: lz4 } = await lz4init.ready;
+  let inputStream;
+  if (argv._.length) {
+    inputStream = fs.createReadStream(argv._[0]);
+  } else {
+    process.stdin.resume();
+    inputStream = process.stdin;
+  }
+  const outputStream = argv.o ? fs.createWriteStream(argv.o) : process.stdout;
 
-const lz4Stream = argv.d ? lz4.createDecompressStream() : lz4.createCompressStream({
-  blockSizeID: lz4.BLOCK_MAX_SIZE[argv.blockMaxSize], /* max64KB, max256KB, max1MB, max4MB; 0 == default */
-  blockMode: argv.blockMode, /* LZ4F_blockLinked, LZ4F_blockIndependent; 0 == default */
-  contentChecksumFlag: argv.contentChecksum, /* 1: frame terminated with 32-bit checksum of decompressed data; 0: disabled (default) */
-  frameType: argv.frameType, /* read-only field : LZ4F_frame or LZ4F_skippableFrame */
-  dictID: argv.dictId, /* Dictionary ID, sent by compressor to help decoder select correct dictionary; 0 == no dictID provided */
-  blockChecksumFlag: argv.blockChecksumFlag, /* 1: each block followed by a checksum of block's compressed data; 0: disabled (default) */
-  compressionLevel: argv.l, /* 0: default (fast mode); values > LZ4HC_CLEVEL_MAX count as LZ4HC_CLEVEL_MAX; values < 0 trigger "fast acceleration" */
-  autoFlush: argv.autoFlush, /* 1: always flush; reduces usage of internal buffers */
-  favorDecSpeed: argv.favorDecSpeed, /* 1: parser favors decompression speed vs compression ratio. Only works for high compression modes (>= LZ4HC_CLEVEL_OPT_MIN) */  /* v1.8.2+ */
-});
+  const lz4Stream = argv.d ? lz4.createDecompressStream() : lz4.createCompressStream({
+    blockSizeID: lz4.BLOCK_MAX_SIZE[argv.blockMaxSize], /* max64KB, max256KB, max1MB, max4MB; 0 == default */
+    blockMode: argv.blockMode, /* LZ4F_blockLinked, LZ4F_blockIndependent; 0 == default */
+    contentChecksumFlag: argv.contentChecksum, /* 1: frame terminated with 32-bit checksum of decompressed data; 0: disabled (default) */
+    frameType: argv.frameType, /* read-only field : LZ4F_frame or LZ4F_skippableFrame */
+    dictID: argv.dictId, /* Dictionary ID, sent by compressor to help decoder select correct dictionary; 0 == no dictID provided */
+    blockChecksumFlag: argv.blockChecksumFlag, /* 1: each block followed by a checksum of block's compressed data; 0: disabled (default) */
+    compressionLevel: argv.l, /* 0: default (fast mode); values > LZ4HC_CLEVEL_MAX count as LZ4HC_CLEVEL_MAX; values < 0 trigger "fast acceleration" */
+    autoFlush: argv.autoFlush, /* 1: always flush; reduces usage of internal buffers */
+    favorDecSpeed: argv.favorDecSpeed, /* 1: parser favors decompression speed vs compression ratio. Only works for high compression modes (>= LZ4HC_CLEVEL_OPT_MIN) */  /* v1.8.2+ */
+  });
 
-inputStream.pipe(lz4Stream).pipe(outputStream);
+  inputStream.pipe(lz4Stream).pipe(outputStream);
+})();

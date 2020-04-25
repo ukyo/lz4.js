@@ -1,4 +1,4 @@
-var { lz4js: lz4 } = require('../dev/lz4.js')();
+var lz4init = require('../dev/lz4.js')();
 var expect = require('chai').expect;
 var fs = require('fs');
 
@@ -6,14 +6,15 @@ const FLG_OFFSET = 4;
 const BD_OFFSET = 5;
 const BD_RESERVED = 4;
 
+let lz4;
+
 describe('lz4', function () {
   // Keep alive. Example for param WASM_ASYNC_COMPILATION=1
-  // before(async function () {
-  //   // Needed for asynchronous behavior
-  //   console.log(lz4init)
-  //   const lz4module = await lz4init().ready;
-  //   lz4 = lz4module.lz4js;
-  // });
+  before(async function () {
+    // Needed for asynchronous behavior
+    const lz4module = await lz4init.ready;
+    lz4 = lz4module.lz4js;
+  });
 
   it('should be defined', function () {
     expect(lz4).to.be.an('object');

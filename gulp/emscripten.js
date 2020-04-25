@@ -28,11 +28,11 @@ const DEV_ARGS = [
   `-s TOTAL_MEMORY=${TOTAL_MEMORY}`,
   `-s ENVIRONMENT=web,node`,
   `-s MODULARIZE=1`,
-  `-s 'EXPORT_NAME="lz4"'`,
+  `-s 'EXPORT_NAME="lz4init"'`,
   // `-s EXPORT_ES6=1`,
   // `-s USE_ES6_IMPORT_META=0`,
-  // `-s WASM=0`,
-  `-s WASM_ASYNC_COMPILATION=0`
+  `-s WASM=1`, // default: 1
+  `-s WASM_ASYNC_COMPILATION=1` // default: 1
 ];
 
 const RELEASE_ARGS = [
