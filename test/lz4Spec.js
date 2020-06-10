@@ -12,11 +12,12 @@ describe('lz4', function () {
   // Keep alive. Example for param WASM_ASYNC_COMPILATION=1
   before(async function () {
     // Needed for asynchronous behavior
-    const lz4module = await lz4init.ready;
+    const lz4module = await lz4init;
     lz4 = lz4module.lz4js;
   });
 
   it('should be defined', function () {
+    console.debug(123, lz4)
     expect(lz4).to.be.an('object');
   });
 

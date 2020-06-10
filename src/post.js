@@ -35,21 +35,5 @@ if (ENVIRONMENT_IS_NODE) {
   };
 }
 
-// Replace Thenable interface with Promise for Asynchronous modules
-if (Module['then']) {
-  delete Module['then'];
-  Module['ready'] = new Promise((resolve, reject) => {
-    if (Module['calledRun']) {
-      return resolve(Module);
-    }
-    addOnPostRun(function () {
-      return resolve(Module);
-    });
-    Module['onAbort'] = function (what) {
-      return reject(what);
-    };
-  });
-}
-
 Module['BLOCK_MAX_SIZE'] = BLOCK_MAX_SIZE;
 Module['lz4js'] = lz4js;

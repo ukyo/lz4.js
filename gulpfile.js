@@ -4,7 +4,7 @@ const rollupBundle = require("./gulp/rollup-bundle");
 const { cleanTest, cleanRelease } = require("./gulp/clean");
 const { concatDev, concatWasmRelease, concatAsmRelease } = require("./gulp/concat");
 const { setupTests } = require("./gulp/test");
-const { createDevDir } = require("./gulp/create-dir");
+const { createDevDir, createTmpDir } = require("./gulp/create-dir");
 const { initWatchDev } = require("./gulp/watch");
 const {
   buildLib,
@@ -17,17 +17,18 @@ const {
 const debugTests = setupTests({ inspectBrk: true });
 const runTests = setupTests();
 
-const initTask = series(createDevDir, fetchLib, buildLib, rollupBundle, compileDev);
+const prepareDirs = series(createDevDir, createTmpDir);
+const initTask = series(prepareDirs, fetchLib, buildLib, rollupBundle, compileDev);
 const release = series(
-  createDevDir,
+  prepareDirs,
   rollupBundle,
   compileAsmRelease, concatAsmRelease,
   compileWasmRelease, concatWasmRelease,
   cleanRelease
 );
-const releaseAsmTask = series(createDevDir, rollupBundle, compileAsmRelease, concatAsmRelease, cleanRelease);
-const releaseWasmTask = series(createDevDir, rollupBundle, compileWasmRelease, concatWasmRelease, cleanRelease);
-const testDevTask = series(createDevDir, rollupBundle, compileDev, runTests, cleanTest);
+const releaseAsmTask = series(prepareDirs, rollupBundle, compileAsmRelease, concatAsmRelease, cleanRelease);
+const releaseWasmTask = series(prepareDirs, rollupBundle, compileWasmRelease, concatWasmRelease, cleanRelease);
+const testDevTask = series(prepareDirs, rollupBundle, compileDev, runTests, cleanTest);
 
 const watchDev = initWatchDev(testDevTask);
 

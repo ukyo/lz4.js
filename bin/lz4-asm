@@ -58,10 +58,10 @@ const argv = require('yargs')
 .help('h')
 
 .epilog('If you want to show more info, refer to https://github.com/Cyan4973/lz4/blob/master/lz4_Frame_format.md')
-.argv
+.argv;
 
 (async function () {
-  const { lz4js: lz4 } = await lz4init.ready;
+  const { lz4js: lz4 } = await lz4init;
   let inputStream;
   if (argv._.length) {
     inputStream = fs.createReadStream(argv._[0]);

@@ -10,9 +10,9 @@
       <div id="result"></div>
     </div>
     <script>
-      const lz4init = lz4();
+      const lz4Module = lz4init();
       window.onload = function () {
-        lz4init.ready.then((lz4module) => {
+        lz4Module.then((lz4module) => {
           const { lz4js } = lz4module;
           f.onchange = function (e) {
           var fr = new FileReader();

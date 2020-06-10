@@ -5,6 +5,12 @@ const createDevDir = function (done) {
     .pipe(dest('dev')); // create folder
 }
 
+const createTmpDir = function (done) {
+  return src('/')
+    .pipe(dest('tmp')); // create folder
+}
+
 module.exports = {
-  createDevDir
+  createDevDir,
+  createTmpDir
 }
