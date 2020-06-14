@@ -29,7 +29,6 @@ jobs:
         with:
           version: 1.39.17
           actions-cache-folder: 'emsdk-cache'
-      - run: ls
       - run: npm install
       - run: npx gulp init
       - run: npx gulp runTests
