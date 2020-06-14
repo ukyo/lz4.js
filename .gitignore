@@ -7,6 +7,7 @@
 # Project
 node_modules/
 dev/
+dist/
 test/_dst1.txt
 test/_dst2.txt
 lz4/
