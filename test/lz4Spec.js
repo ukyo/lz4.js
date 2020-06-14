@@ -1,15 +1,29 @@
-var lz4 = require('../dev/lz4.js');
+var lz4init = require('../dev/lz4.js')();
 var expect = require('chai').expect;
 var fs = require('fs');
 
+const FLG_OFFSET = 4;
+const BD_OFFSET = 5;
+const BD_RESERVED = 4;
+
+let lz4;
+
 describe('lz4', function () {
+  // Keep alive. Example for param WASM_ASYNC_COMPILATION=1
+  before(async function () {
+    // Needed for asynchronous behavior
+    const lz4module = await lz4init;
+    lz4 = lz4module.lz4js;
+  });
+
   it('should be defined', function () {
+    console.debug(123, lz4)
     expect(lz4).to.be.an('object');
   });
 
-  var sourceBuffer = fs.readFileSync('test/source.txt')
+  var sourceBuffer = fs.readFileSync('test/source.txt');
   var source = new Uint8Array(sourceBuffer);
-  var compressedBuffer = fs.readFileSync('test/compressed.lz4')
+  var compressedBuffer = fs.readFileSync('test/compressed.lz4');
   var compressed = new Uint8Array(compressedBuffer);
 
   function sameAll(a, b) {
@@ -57,61 +71,109 @@ describe('lz4', function () {
 
     it('can set block max size option 64KB', function () {
       var c = lz4.compress(lz4.decompress(compressed), {
-        blockMaxSize: lz4.BLOCK_MAX_SIZE_64KB
+        frameInfo: {
+          blockSizeID: lz4.BLOCK_MAX_SIZE["64KB"]
+        }
       });
       var s = lz4.decompress(c);
       expect(s.length).to.equal(source.length);
       expect(sameAll(s, source)).to.be.true;
+      expect(c[BD_OFFSET] >> BD_RESERVED).to.equal(4);
     });
 
     it('can set block max size option 256KB', function () {
       var c = lz4.compress(lz4.decompress(compressed), {
-        blockMaxSize: lz4.BLOCK_MAX_SIZE_256KB
+        frameInfo: {
+          blockSizeID: lz4.BLOCK_MAX_SIZE["256KB"]
+        }
       });
       var s = lz4.decompress(c);
       expect(s.length).to.equal(source.length);
       expect(sameAll(s, source)).to.be.true;
+      expect(c[BD_OFFSET] >> BD_RESERVED).to.equal(5);
     });
 
     it('can set block max size option 1MB', function () {
       var c = lz4.compress(lz4.decompress(compressed), {
-        blockMaxSize: lz4.BLOCK_MAX_SIZE_1MB
+        frameInfo: {
+          blockSizeID: lz4.BLOCK_MAX_SIZE["1MB"]
+        }
       });
       var s = lz4.decompress(c);
       expect(s.length).to.equal(source.length);
       expect(sameAll(s, source)).to.be.true;
+      expect(c[BD_OFFSET] >> BD_RESERVED).to.equal(6);
     });
 
     it('can set block max size option 4MB', function () {
       var c = lz4.compress(lz4.decompress(compressed), {
-        blockMaxSize: lz4.BLOCK_MAX_SIZE_4MB
+        frameInfo: {
+          blockSizeID: lz4.BLOCK_MAX_SIZE["4MB"]
+        }
       });
       var s = lz4.decompress(c);
       expect(s.length).to.equal(source.length);
       expect(sameAll(s, source)).to.be.true;
+      expect(c[BD_OFFSET] >> BD_RESERVED).to.equal(7);
+    });
+
+    it('should have default flags', function () {
+      var c = lz4.compress(lz4.decompress(compressed));
+      expect(c[FLG_OFFSET]).to.equal(72); // 0100 1000
     });
 
     it('can set block independence flag', function () {
       var c = lz4.compress(lz4.decompress(compressed), {
-        blockIndependent: true
+        frameInfo: {
+          blockMode: 1
+        }
       });
       var s = lz4.decompress(c);
       expect(s.length).to.equal(source.length);
       expect(sameAll(s, source)).to.be.true;
+      expect(c[FLG_OFFSET]).to.equal(104); // 0110 1000
+    });
+
+    it('can set block checksum flag', function () {
+      var c = lz4.compress(lz4.decompress(compressed), {
+        frameInfo: {
+          blockChecksumFlag: 1,
+        }
+      });
+      var s = lz4.decompress(c);
+      expect(s.length).to.equal(source.length);
+      expect(sameAll(s, source)).to.be.true;
+      // Need to be re-checked because looks like this option set dictID instead blockChecksumFlag
+      expect(c[FLG_OFFSET]).to.equal(73); // 0100 1001
     });
 
     it('can set content checksum flag', function () {
       var c = lz4.compress(lz4.decompress(compressed), {
-        contentChecksum: true
+        frameInfo: {
+          contentChecksumFlag: 1
+        }
       });
       var s = lz4.decompress(c);
       expect(s.length).to.equal(source.length);
       expect(sameAll(s, source)).to.be.true;
+      expect(c[FLG_OFFSET]).to.equal(76); // 0100 1100
+    });
+
+    it('Compress and decompress big amount of data', function () {
+      const toCompress = 'x'.repeat(1024 * 10000);
+      const toCompressBuf = Buffer.from(toCompress, "utf8");
+
+      const compressed = lz4.compress(toCompressBuf);
+      const decompressedBuf = lz4.decompress(compressed);
+      const decompressed = decompressedBuf.toString('utf8');
+      expect(decompressedBuf.length).to.equal(toCompressBuf.length);
+      expect(decompressed).to.equal(toCompress);
+      expect(compressed[FLG_OFFSET]).to.equal(72); // 0100 0100
     });
   });
 
-  describe('lz4.createDecompressStream', function() {
-    it('should bd defined', function() {
+  describe('lz4.createDecompressStream', function () {
+    it('should bd defined', function () {
       expect(lz4.createDecompressStream).to.be.a('function');
     });
 
@@ -127,8 +189,8 @@ describe('lz4', function () {
     });
   });
 
-  describe('lz4.createCompressStream', function() {
-    it('should bd defined', function() {
+  describe('lz4.createCompressStream', function () {
+    it('should bd defined', function () {
       expect(lz4.createCompressStream).to.be.a('function');
     });
 
@@ -137,7 +199,9 @@ describe('lz4', function () {
       var cs = lz4.createCompressStream();
       var ds = lz4.createDecompressStream();
       var ws = fs.createWriteStream('test/_dst2.txt');
-      rs.pipe(cs).pipe(ds).pipe(ws);
+      rs.pipe(cs)
+        .pipe(ds)
+        .pipe(ws);
       ws.on('close', function () {
         expect(fs.readFileSync('test/source.txt').equals(fs.readFileSync('test/_dst2.txt'))).to.be.true;
         done();
