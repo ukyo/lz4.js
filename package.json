@@ -1,6 +1,6 @@
 {
   "name": "lz4-asm",
-  "version": "0.4.2",
+  "version": "0.4.1",
   "description": "A JavaScript binding of LZ4 for the browser.",
   "main": "dist/lz4wasm.js",
   "scripts": {
