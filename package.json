@@ -25,10 +25,11 @@
     "gulp-concat": "^2.6.1",
     "gulp-mocha": "^7.0.2",
     "rollup": "^2.3.2",
-    "rollup-plugin-babel": "^4.4.0",
+    "rollup-plugin-babel": "^4.4.0"
+  },
+  "dependencies": {
     "yargs": "^3.32.0"
   },
-  "dependencies": {},
   "bin": {
     "lz4-asm": "./bin/lz4-asm"
   }
