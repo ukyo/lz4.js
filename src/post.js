@@ -37,3 +37,14 @@ if (ENVIRONMENT_IS_NODE) {
 
 Module['BLOCK_MAX_SIZE'] = BLOCK_MAX_SIZE;
 Module['lz4js'] = lz4js;
+
+if (Module['asm']) {
+  // this param available only when WASM_ASYNC_COMPILATION=0
+  // and for MODULARIZE mode we usually want to get module synchronously
+  // but by default it always returns Module['ready'] that is Promise.
+  // Reassign ready function and export by default whole Module.
+  // With this behavior default async flow stay untouched.
+  // And synchronous flow become much easier to operate
+  Module['_ready'] = Module['ready'];
+  Module['ready'] = Module;
+}

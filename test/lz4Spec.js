@@ -17,7 +17,6 @@ describe('lz4', function () {
   });
 
   it('should be defined', function () {
-    console.debug(123, lz4)
     expect(lz4).to.be.an('object');
   });
 

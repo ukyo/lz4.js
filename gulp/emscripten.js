@@ -27,7 +27,7 @@ const COMMON_ARGS = [
   `-s EXTRA_EXPORTED_RUNTIME_METHODS=[]`,
   `-s TOTAL_MEMORY=${TOTAL_MEMORY}`,
   `-s ENVIRONMENT=web,node`,
-  `-s MODULARIZE=1`,
+  `-s MODULARIZE=1`, // MODULARIZE=1 always return Promise
   `-s 'EXPORT_NAME="lz4init"'`,
   // `-s EXPORT_ES6=1`,
   // `-s USE_ES6_IMPORT_META=0`,
@@ -46,17 +46,21 @@ const RELEASE_ARGS = [
   ,
 ];
 
-const WASM_RELEASE_ARGS = RELEASE_ARGS.concat([
+const WASM_ARGS = [
   // WASM arguments
   `-s WASM=1`, // default: 1
   `-s WASM_ASYNC_COMPILATION=1`, // default: 1
-]).join(" ");
+];
 
-const WASM_SYNC_RELEASE_ARGS = RELEASE_ARGS.concat([
+const WASM_RELEASE_ARGS = RELEASE_ARGS.concat(WASM_ARGS).join(" ");
+
+const WASM_SYNC_ARGS = [
   // WASM synchronous arguments
   `-s WASM=1`, // default: 1
   `-s WASM_ASYNC_COMPILATION=0`,
-]).join(" ");
+];
+
+const WASM_SYNC_RELEASE_ARGS = RELEASE_ARGS.concat(WASM_SYNC_ARGS).join(" ");
 
 const ASM_RELEASE_ARGS = RELEASE_ARGS.concat([
   // ASM.js arguments
@@ -70,7 +74,7 @@ function buildLib(cb) {
 function compileDev(cb) {
   const buildSync = function() {
     return new Promise((resolve, reject) => {
-      exec(`emcc -v ${INCLUDES} ${C_FILES} ${LIBS} -o dev/lz4.sync.js ${POST_JS} ${COMMON_ARGS.join(" ")} -s WASM=1 -s WASM_ASYNC_COMPILATION=0 ${EXPORTED_FUNCTIONS}`, function(error) {
+      exec(`emcc -v ${INCLUDES} ${C_FILES} ${LIBS} -o dev/lz4.sync.js ${POST_JS} ${COMMON_ARGS.join(" ")} ${WASM_SYNC_ARGS.join(" ")} ${EXPORTED_FUNCTIONS}`, function(error) {
         if (error) {
           reject(error);
         }
@@ -81,7 +85,7 @@ function compileDev(cb) {
 
   const buildAsync = function() {
     return new Promise((resolve, reject) => {
-      exec(`emcc -v ${INCLUDES} ${C_FILES} ${LIBS} -o dev/lz4.js ${POST_JS} ${COMMON_ARGS.join(" ")} -s WASM=1 -s WASM_ASYNC_COMPILATION=1 ${EXPORTED_FUNCTIONS}`, function(error) {
+      exec(`emcc -v ${INCLUDES} ${C_FILES} ${LIBS} -o dev/lz4.js ${POST_JS} ${COMMON_ARGS.join(" ")} ${WASM_ARGS.join(" ")} ${EXPORTED_FUNCTIONS}`, function(error) {
         if (error) {
           reject(error);
         }
