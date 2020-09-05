@@ -1,1 +1,1 @@
-/*! lz4.js Released under the MIT license. https://github.com/STUkh/lz4.js */
+/*! lz4.js Released under the MIT license. https://github.com/ukyo/lz4.js */

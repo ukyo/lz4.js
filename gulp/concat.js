@@ -8,7 +8,7 @@ function concatDev(done) {
 }
 
 function concatAsmRelease(done) {
-  return src(['src/header.js', 'tmp/_lz4.js', 'src/footer.js'])
+  return src(['src/header.js', 'tmp/_lz4.asm.js', 'src/footer.js'])
     .pipe(concat('lz4asm.js'))
     .pipe(dest('dist'));
 }
@@ -22,8 +22,18 @@ function concatWasmRelease(done) {
     .pipe(dest('dist'));
 }
 
+function concatWasmSyncRelease(done) {
+  return src(['src/header.js', 'tmp/_lz4.sync.js', 'src/footer.js'])
+    .pipe(concat('lz4wasm.sync.js'))
+    .pipe(dest('dist'));
+
+  // No need to generate separate WASM file for synchronous mode
+  // The only difference in between syn/async in JS initialization
+}
+
 module.exports = {
   concatDev,
   concatAsmRelease,
-  concatWasmRelease
+  concatWasmRelease,
+  concatWasmSyncRelease,
 }

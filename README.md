@@ -53,12 +53,19 @@ Or even shorter with async/await and Object destructuring
   const { lz4js } = await lz4init().ready;
 ```
 
+Also we are able to directly set path for WASM module:
+```javascript
+lz4init({
+    locateFile: () => '/public/lz4/_lz4.wasm'
+});
+```
+
 ### Synchronouse module mode
 
 First of all to compile sources in synchronous module mode - set `-s WASM_ASYNC_COMPILATION=0` option in `gulp/emscripten.js` file for `DEV_ARGS` variable.
 
 Then in node env it can be accessed easily `const lz4 = lz4init();` that's it.
-BUT! There is a big issue in browsers because WASM modules are restricted for synchronous load in  main thread.
+BUT! There is a big issue in browsers because WASM modules are restricted for synchronous load in main thread.
 There are two ways to load it, both require to pass argument into init function `lz4init({ wasmBinary: wasmModuleAsArrayBuffer });` where wasmModuleAsArrayBuffer - preloaded file as ArrayBuffer in Uint8Array view representation:
 1. Manually load/preload module through XHR/fetch, etc. then transform to arrayBuffer and call 
 ```javascript
@@ -207,9 +214,11 @@ cleanRelease
 compileDev
 compileAsmRelease
 compileWasmRelease
+compileWasmSyncRelease
 concatDev
 concatAsmRelease
 concatWasmRelease
+concatWasmSyncRelease
 debugTests
 fetchLib
 rollup
@@ -221,4 +230,5 @@ release
 releaseAsm
 releaseWasm
 testDev
+replaceWasmSyncPath
 ```
