@@ -73,6 +73,7 @@ It can be accessed pretty easily `const lz4 = lz4init();` that's it.
 There is a big issue in browsers because WASM modules restricted for synchronous load in the main thread.
 
 The Easiest way to resolve this issue - include binary sources directly in module loader.
+
 Just add parameter `-s SINGLE_FILE=1` to `WASM_SYNC_ARGS` variable placed in `/gulp/emscripten.js`. It should looks like
 ```javascript
 const WASM_SYNC_ARGS = [
@@ -80,6 +81,16 @@ const WASM_SYNC_ARGS = [
   `-s WASM_ASYNC_COMPILATION=0`,
   `-s SINGLE_FILE=1`,
 ];
+```
+
+It is recommended to provide module instance into init function for synchronous mode, because in MODULARIZE mode init function always return Promise.
+
+```javascript
+const lz4init = require('lz4-asm');
+const lz4Module = {};
+const isReadyPromise = lz4init(lz4Module);
+// For sync mode we can be sure that now lz4Module contain all required WASM methods
+const lz4 = lz4Module.lz4js;
 ```
 
 Under the hood this option encode `.wasm` module as base64 and include in bundle, on runtime decode base64 to arrayBuffer and init
