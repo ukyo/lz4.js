@@ -53,36 +53,71 @@ Or even shorter with async/await and Object destructuring
   const { lz4js } = await lz4init().ready;
 ```
 
-### Synchronouse module mode
-
-First of all to compile sources in synchronous module mode - set `-s WASM_ASYNC_COMPILATION=0` option in `gulp/emscripten.js` file for `DEV_ARGS` variable.
-
-Then in node env it can be accessed easily `const lz4 = lz4init();` that's it.
-BUT! There is a big issue in browsers because WASM modules are restricted for synchronous load in  main thread.
-There are two ways to load it, both require to pass argument into init function `lz4init({ wasmBinary: wasmModuleAsArrayBuffer });` where wasmModuleAsArrayBuffer - preloaded file as ArrayBuffer in Uint8Array view representation:
-1. Manually load/preload module through XHR/fetch, etc. then transform to arrayBuffer and call 
+Also we are able to directly set path for WASM module:
 ```javascript
+lz4init({
+    locateFile: () => '/public/lz4/_lz4.wasm'
+});
+```
+
+### Synchronous module mode
+
+Synchronous loader module build by default in `dist/lz4.sync.js`
+
+#### NodeJS
+
+It can be accessed pretty easily `const lz4 = lz4init();` that's it.
+
+#### Browser
+
+There is a big issue in browsers because WASM modules restricted for synchronous load in the main thread.
+
+The Easiest way to resolve this issue - include binary sources directly in module loader.
+
+Just add parameter `-s SINGLE_FILE=1` to `WASM_SYNC_ARGS` variable placed in `/gulp/emscripten.js`. It should looks like
+```javascript
+const WASM_SYNC_ARGS = [
+  `-s WASM=1`, // default: 1
+  `-s WASM_ASYNC_COMPILATION=0`,
+  `-s SINGLE_FILE=1`,
+];
+```
+
+It is recommended to provide module instance into init function for synchronous mode, because in MODULARIZE mode init function always return Promise.
+
+```javascript
+const lz4init = require('lz4-asm');
+const lz4Module = {};
+const isReadyPromise = lz4init(lz4Module);
+// For sync mode we can be sure that now lz4Module contain all required WASM methods
+const lz4 = lz4Module.lz4js;
+```
+
+Under the hood this option encode `.wasm` module as base64 and include in bundle, on runtime decode base64 to arrayBuffer and init
+```javascript
+function _base64ToArrayBuffer(base64) {
+   const binary_string = window.atob(base64);
+   const binary_length = binary_string.length;
+   const bytes = new Uint8Array(binary_length);
+   for (var i = 0; i < binary_length; i++) {
+       bytes[i] = binary_string.charCodeAt(i);
+   }
+   return bytes.buffer;
+}
+
+const wasmModuleAsArrayBuffer = _base64ToArrayBuffer(wasmAsBase64);
+const lz4 = lz4init({ wasmBinary: wasmModuleAsArrayBuffer });
+```
+
+Another way is bypassing argument into init function `lz4init({ wasmBinary: wasmModuleAsArrayBuffer });` where wasmModuleAsArrayBuffer - preloaded file as ArrayBuffer in Uint8Array view representation: 
+```javascript
+// Manually load/preload module through XHR/fetch, etc. then transform to arrayBuffer and call
 fetch('PATH_TO_WASM_FILE')
   .then(response => response.arrayBuffer())
   .then(wasmModuleAsArrayBuffer => lz4init({ wasmBinary: wasmModuleAsArrayBuffer }))
   .catch(err => {
     throw new Error('Failed to load WASM module');
   })
-```
-1. Another variant - to encode `.wasm` module as base64, include in bundle, on runtime decode base64 to arrayBuffer and init
-```javascript
-function _base64ToArrayBuffer(base64) {
-    const binary_string = window.atob(base64);
-    const binary_length = binary_string.length;
-    const bytes = new Uint8Array(binary_length);
-    for (var i = 0; i < binary_length; i++) {
-        bytes[i] = binary_string.charCodeAt(i);
-    }
-    return bytes.buffer;
-}
-
-const wasmModuleAsArrayBuffer = _base64ToArrayBuffer(wasmAsBase64);
-const lz4 = lz4init({ wasmBinary: wasmModuleAsArrayBuffer });
 ```
 
 ### ASM.js Module modes
@@ -207,9 +242,11 @@ cleanRelease
 compileDev
 compileAsmRelease
 compileWasmRelease
+compileWasmSyncRelease
 concatDev
 concatAsmRelease
 concatWasmRelease
+concatWasmSyncRelease
 debugTests
 fetchLib
 rollup
@@ -221,4 +258,5 @@ release
 releaseAsm
 releaseWasm
 testDev
+replaceWasmSyncPath
 ```

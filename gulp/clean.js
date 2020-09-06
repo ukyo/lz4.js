@@ -7,7 +7,7 @@ function cleanTest(done) {
 }
 
 function cleanRelease(done) {
-  return src(['tmp/_lz4.js', 'tmp/_lz4.wasm'], { read: false, allowEmpty: true })
+  return src(['tmp/*'], { read: false, allowEmpty: true })
     .pipe(clean());
 }
 
