@@ -23,7 +23,7 @@
     "gulp-clean": "^0.4.0",
     "gulp-cli": "^2.2.0",
     "gulp-concat": "^2.6.1",
-    "gulp-mocha": "^7.0.2",
+    "gulp-mocha": "^8.0.0",
     "rollup": "^2.3.2",
     "rollup-plugin-babel": "^4.4.0"
   },
